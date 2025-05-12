@@ -1,12 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <title>FizjoActive Loyalty System</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="js_utils/xlsx_file_loader.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
 <body>
 
 <h2>FizjoActive Loyalty System</h2>
+<input type="file" id="fileInputWersja1" accept=".xlsx" onchange="handleFile(event, 1)">
+<label for="fileInputWersja1">Załaduj plik XLSX (Wersja 1)</label><br><br>
+
+<input type="file" id="fileInputWersja2" accept=".xlsx" onchange="handleFile(event, 2)">
+<label for="fileInputWersja2">Załaduj plik XLSX (Wersja 2)</label>
 
 </body>
 </html>
