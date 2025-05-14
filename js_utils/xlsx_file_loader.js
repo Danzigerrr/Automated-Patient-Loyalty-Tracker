@@ -118,30 +118,47 @@ function renderReport(patients) {
     const tbody = document.querySelector('#reportTable tbody');
     tbody.innerHTML = '';
 
-    patients.forEach(p => {
-        const eval = evaluateLoyalty(p);
-        const tr   = document.createElement('tr');
-        if (eval.highlightNext) tr.classList.add('next-threshold');
-        if (eval.expired)       tr.classList.add('reached');
+    // 1. map status → CSS class
+    const groupClassMap = {
+        'Roczni Lojalni – Grupa 1': 'group-yearly1',
+        'Roczni Lojalni – Grupa 2': 'group-yearly2',
+        '30+ Wizyt':               'group-over30',
+        'Brak statusu':            'group-none'
+    };
 
+    patients.forEach(p => {
+        const result = evaluateLoyalty(p);
+
+        // 2. create row and apply classes
+        const tr = document.createElement('tr');
+        const groupCls = groupClassMap[result.status];
+        if (groupCls)       tr.classList.add(groupCls);
+        if (result.highlightNext) tr.classList.add('next-threshold');
+        if (result.expired)       tr.classList.add('reached');
+
+        // 3. fill content
         tr.innerHTML = `
       <td>${p.name}</td>
       <td>${p.visitsInPeriod}</td>
       <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
-      <td>${eval.status}</td>
-      <td>${eval.nextThreshold}</td>
-      <td>${eval.discount}%</td>
+      <td>${result.status}</td>
+      <td>${result.nextThreshold}</td>
+      <td>${result.discount}%</td>
     `;
+
+        // 4. append to table
         tbody.appendChild(tr);
-
-        tr.classList.add({
-            'Roczni Lojalni – Grupa 1': 'group-yearly1',
-            'Roczni Lojalni – Grupa 2': 'group-yearly2',
-            '30+ Wizyt':               'group-over30',
-            'Brak statusu':            'group-none'
-        }[eval.status]);
-
     });
 
     document.getElementById('reportSection').style.display = 'block';
+}
+
+
+function hideOrShowFileUploadInstruction() {
+    var x = document.getElementById("instruction");
+    if (x.style.display === "none") {
+        x.style.display = "block";
+    } else {
+        x.style.display = "none";
+    }
 }
