@@ -1,20 +1,44 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <title>FizjoActive Loyalty System</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="js_utils/xlsx_file_loader.js"></script>
     <link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
+
 <body>
-
 <h2>FizjoActive Loyalty System</h2>
-<input type="file" id="fileInputWersja1" accept=".xlsx" onchange="handleFile(event, 1)">
-<label for="fileInputWersja1">Załaduj plik XLSX (Wersja 1)</label><br><br>
 
-<input type="file" id="fileInputWersja2" accept=".xlsx" onchange="handleFile(event, 2)">
-<label for="fileInputWersja2">Załaduj plik XLSX (Wersja 2)</label>
+<label>Okres analizy od:
+    <input type="date" id="startDate" value="2025-01-01">
+</label>
+<br><br>
+
+<input type="file" id="fileInput" accept=".xlsx">
+<label for="fileInput">Załaduj plik XLSX (Wersja 2)</label>
+
+<section id="reportSection" style="display:none; margin-top:2rem;">
+    <h3>Raport lojalności</h3>
+    <table id="reportTable">
+        <thead>
+        <tr>
+            <th>Pacjent</th>
+            <th>Wizyty w tym okresie</th>
+            <th>Data ostatniej wizyty</th>
+            <th>Obecny Status</th>
+            <th>Do kolejnego progu</th>
+            <th>Zniżka</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+
+<script src="js_utils/xlsx_file_loader.js"></script>
+
 
 </body>
 </html>

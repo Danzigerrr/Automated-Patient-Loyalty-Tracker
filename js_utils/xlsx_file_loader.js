@@ -1,133 +1,139 @@
-function handleFile(event, version) {
-    const file = event.target.files[0];
+// --- 1. Definicja reguł lojalnościowych ---
+const LOYALTY_RULES = [
+    { name: 'Roczni Lojalni – Grupa 1', min: 10, max: 20, discount: 5, validityDays: 90 },
+    { name: 'Roczni Lojalni – Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180 },
+    { name: '30+ Wizyt',               min: 30, max: Infinity, discount: 10, validityDays: 365 }
+];
+
+// --- 2. Pomocnik do obliczeń datowych ---
+function daysBetween(a, b) {
+    return (b - a) / (1000 * 60 * 60 * 24);
+}
+
+// --- 3. Wczytanie i parsowanie pliku XLSX ---
+document.getElementById('fileInput')
+    .addEventListener('change', handleFile);
+
+function handleFile(ev) {
+    const file = ev.target.files[0];
     if (!file) return;
 
+    const startDate = new Date(
+        document.getElementById('startDate').value
+    );
+
     const reader = new FileReader();
+    reader.onload = e => {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-    reader.onload = function(e) {
-        const data = e.target.result;
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }); // Ustawiamy defval na ''
+        rows.pop();              // usuń ostatni wiersz („Suma…”)
+        const dataRows = rows.slice(1);  // a potem usuń nagłówek
 
-        console.log(`Dane z pliku (Wersja ${version}):`);
-        console.log(jsonData);
+        // pomiń nagłówek
+        const raw = dataRows.map(r => ({
+            imie:      r[1],
+            nazwisko:  r[2],
+            wizytyTot: parseInt(r[15], 10) || 0,
+            visitInfo: r[9].trim()
+        }));
 
-        // Przetwarzanie danych w zależności od wersji
-        if (version === 1) {
-            processDataVersion1(jsonData);
-        } else if (version === 2) {
-            processDataVersion2(jsonData);
-        }
+        // grupowanie i budowanie historii dat
+        const grouped = {};
+        raw.forEach(item => {
+            const key = `${item.imie} ${item.nazwisko}`;
+            if (!grouped[key]) {
+                grouped[key] = { ...item, dates: [] };
+            }
+            if (item.visitInfo !== '-' && item.visitInfo !== '') {
+                // "2025-02-24 - 4"
+                const datePart = item.visitInfo.split('-')[0].trim();
+                grouped[key].dates.push(new Date(datePart));
+            }
+        });
+
+        // uzupełnij brak dat: wszystkie wizyty w dniu startu
+        Object.values(grouped).forEach(p => {
+            if (p.dates.length === 0 && p.wizytyTot > 0) {
+                for (let i = 0; i < p.wizytyTot; i++) {
+                    p.dates.push(new Date(startDate));
+                }
+            }
+        });
+
+        // przygotuj obiekt pacjenta z liczbą wizyt i datą ostatniej wizyty
+        const patients = Object.values(grouped).map(p => {
+            const visitsInPeriod = p.dates.filter(d => d >= startDate).length;
+            const lastVisit = p.dates.length
+                ? new Date(Math.max(...p.dates.map(d => d.getTime())))
+                : null;
+            return {
+                name:            `${p.imie} ${p.nazwisko}`,
+                visitsInPeriod,
+                lastVisit
+            };
+        });
+
+        renderReport(patients);
     };
-
-    reader.onerror = function(error) {
-        console.error("Błąd odczytu pliku:", error);
-    };
-
     reader.readAsArrayBuffer(file);
 }
 
-function processDataVersion1(data) {
-    console.log("Przetwarzanie danych dla Wersji 1:");
-    const przetworzoneDane = data.slice(1).map(row => ({
-        lp: row[0],
-        imie: row[1],
-        nazwisko: row[2],
-        dataUrodzenia: row[3],
-        wiek: row[4],
-        plec: row[5],
-        telefon: row[6],
-        adresEmail: row[7],
-        nrKartoteki: row[8],
-        kraj: row[9],
-        miejscowosc: row[10],
-        ulica: row[11],
-        nrDomu: row[12],
-        nrLokalu: row[13],
-        uslugi: row[14],
-        wizyty: row[15],
-        czasTrwania: row[16],
-        dokumentyKsiegowe: row[17],
-        wartoscDokumentow: row[18],
-        zgodaPrzetwarzanie: row[19],
-        zgodaSms: row[20],
-        zgodaEmail: row[21],
-        zgodaDostepDoDanych: row[22]
-    }));
-    console.log(przetworzoneDane);
-
+// --- 4. Ewaluacja statusu lojalnościowego ---
+function evaluateLoyalty(p) {
+    const now = new Date();
+    for (let rule of LOYALTY_RULES) {
+        if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
+            const nextThreshold = rule.max === Infinity
+                ? '—'
+                : `${rule.max - p.visitsInPeriod} wizyt`;
+            const expired = p.lastVisit
+                ? daysBetween(p.lastVisit, now) > rule.validityDays
+                : true;
+            return {
+                status:       rule.name,
+                discount:     rule.discount,
+                nextThreshold,
+                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= 2),
+                expired
+            };
+        }
+    }
+    // jeśli poza progami → ile do pierwszego
+    const first = LOYALTY_RULES[0];
+    const toFirst = first.min - p.visitsInPeriod;
+    return {
+        status:       'Brak statusu',
+        discount:     0,
+        nextThreshold:`${toFirst} wizyt`,
+        highlightNext: toFirst <= 2,
+        expired:       false
+    };
 }
 
-function processDataVersion2(data) {
-    console.log("Przetwarzanie danych dla Wersji 2:");
+// --- 5. Renderowanie tabeli raportu ---
+function renderReport(patients) {
+    const tbody = document.querySelector('#reportTable tbody');
+    tbody.innerHTML = '';
 
-    const przetworzoneDane = [];
-    let i = 1;
-    while (i < data.length) {
-        if(data[i].length === 20){
-            przetworzoneDane.push({
-                lp: data[i][0],
-                imie: data[i][1],
-                nazwisko: data[i][2],
-                dataUrodzenia: data[i][3],
-                wiek: data[i][4],
-                plec: data[i][5],
-                telefon: data[i][6],
-                adresEmail: data[i][7],
-                nrKartoteki: data[i][8],
-                wizyta: null,
-                kraj: data[i][9],
-                miejscowosc: data[i][10],
-                ulica: data[i][11],
-                nrDomu: data[i][12],
-                nrLokalu: data[i][13],
-                uslugi: data[i][14],
-                wizyty: data[i][15],
-                czasTrwania: data[i][16],
-                dokumentyKsiegowe: data[i][17],
-                wartoscDokumentow: data[i][18],
-                zgodaPrzetwarzanie: data[i][19],
-                zgodaSms: data[i][20],
-                zgodaEmail: data[i][21],
-                zgodaDostepDoDanych: data[i][22]
+    patients.forEach(p => {
+        const eval = evaluateLoyalty(p);
+        const tr   = document.createElement('tr');
+        if (eval.highlightNext) tr.classList.add('next-threshold');
+        if (eval.expired)       tr.classList.add('reached');
 
-            });
-            i++;
-        }
-        else{
-            przetworzoneDane.push({
-                lp: data[i][0],
-                imie: data[i][1],
-                nazwisko: data[i][2],
-                dataUrodzenia: data[i][3],
-                wiek: data[i][4],
-                plec: data[i][5],
-                telefon: data[i][6],
-                adresEmail: data[i][7],
-                nrKartoteki: data[i][8],
-                wizyta: data[i][9],
-                kraj: data[i][10],
-                miejscowosc: data[i][11],
-                ulica: data[i][12],
-                nrDomu: data[i][13],
-                nrLokalu: data[i][14],
-                uslugi: data[i][15],
-                wizyty: data[i][16],
-                czasTrwania: data[i][17],
-                dokumentyKsiegowe: data[i][18],
-                wartoscDokumentow: data[i][19],
-                zgodaPrzetwarzanie: data[i][20],
-                zgodaSms: data[i][21],
-                zgodaEmail: data[i][22],
-                zgodaDostepDoDanych: data[i][23]
+        tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.visitsInPeriod}</td>
+      <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
+      <td>${eval.status}</td>
+      <td>${eval.nextThreshold}</td>
+      <td>${eval.discount}%</td>
+    `;
+        tbody.appendChild(tr);
+    });
 
-            });
-            i+=2;
-        }
-
-    }
-    console.log(przetworzoneDane);
-
+    document.getElementById('reportSection').style.display = 'block';
 }
