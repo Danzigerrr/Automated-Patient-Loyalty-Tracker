@@ -87,7 +87,7 @@ function evaluateLoyalty(p) {
     for (let rule of LOYALTY_RULES) {
         if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
             const nextThreshold = rule.max === Infinity
-                ? '—'
+                ? '0 wizyt'
                 : `${rule.max - p.visitsInPeriod} wizyt`;
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
@@ -108,7 +108,7 @@ function evaluateLoyalty(p) {
         status:       'Brak statusu',
         discount:     0,
         nextThreshold:`${toFirst} wizyt`,
-        highlightNext: toFirst <= 2,
+        highlightNext: toFirst <= 3,
         expired:       false
     };
 }
@@ -133,6 +133,14 @@ function renderReport(patients) {
       <td>${eval.discount}%</td>
     `;
         tbody.appendChild(tr);
+
+        tr.classList.add({
+            'Roczni Lojalni – Grupa 1': 'group-yearly1',
+            'Roczni Lojalni – Grupa 2': 'group-yearly2',
+            '30+ Wizyt':               'group-over30',
+            'Brak statusu':            'group-none'
+        }[eval.status]);
+
     });
 
     document.getElementById('reportSection').style.display = 'block';

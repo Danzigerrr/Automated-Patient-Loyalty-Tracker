@@ -10,18 +10,10 @@ h2 {
     margin-bottom: 20px;
 }
 
-input[type="file"] {
-    margin-bottom: 10px;
-}
-
+input[type="file"],
 label {
     display: block;
-    margin-bottom: 5px;
-}
-
-#fileInputWersja1,
-#fileInputWersja2 {
-    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 table {
@@ -41,10 +33,44 @@ th {
     background-color: #f0f0f0;
 }
 
+/* zebra striping */
 tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #fafafa;
 }
 
+/* hover */
 tr:hover {
     background-color: #f1f1f1;
 }
+
+/* report table specifics */
+#reportTable {
+    width: 100%;
+    margin-top: 1rem;
+}
+#reportTable th, #reportTable td {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+}
+
+/* Loyalty groups */
+.group-yearly1 {
+    background-color: #e3f2fd; /* light blue */
+}
+.group-yearly2 {
+    background-color: #e8f5e9; /* light green */
+}
+.group-over30 {
+    background-color: #f3e5f5; /* light purple */
+}
+.group-none {
+    background-color: #ffebee; /* very light red for “no status” */
+}
+
+/* About-to-change highlight */
+.next-threshold {
+    background-color: #fff8e1 !important; /* amber */
+    font-weight: bold;
+}
+
+
