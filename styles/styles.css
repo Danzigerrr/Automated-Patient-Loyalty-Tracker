@@ -11,17 +11,12 @@ h2 {
 }
 
 input[type="file"] {
+    display: block;
     margin-bottom: 10px;
 }
-
 label {
     display: block;
-    margin-bottom: 5px;
-}
-
-#fileInputWersja1,
-#fileInputWersja2 {
-    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 table {
@@ -41,10 +36,64 @@ th {
     background-color: #f0f0f0;
 }
 
+/* zebra striping */
 tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #fafafa;
 }
 
+/* hover */
 tr:hover {
     background-color: #f1f1f1;
 }
+
+/* report table specifics */
+#reportTable {
+    width: 100%;
+    margin-top: 1rem;
+}
+#reportTable th, #reportTable td {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+}
+
+/* Loyalty groups */
+.group-yearly1 {
+    background-color: #e3f2fd; /* light blue */
+}
+.group-yearly2 {
+    background-color: #e8f5e9; /* light green */
+}
+.group-over30 {
+    background-color: #f3e5f5; /* light purple */
+}
+.group-none {
+    background-color: #ffebee; /* very light red for “no status” */
+}
+
+
+/* Remove old table borders—Bootstrap handles it */
+#reportTable th,
+#reportTable td {
+    border: none;
+}
+
+/* stronger, td-level background overrides */
+#reportTable tbody tr.group-yearly1 td {
+    background-color: #e3f2fd !important; /* light blue */
+}
+#reportTable tbody tr.group-yearly2 td {
+    background-color: #e8f5e9 !important; /* light green */
+}
+#reportTable tbody tr.group-over30 td {
+    background-color: #f3e5f5 !important; /* light purple */
+}
+#reportTable tbody tr.group-none td {
+    background-color: #ffebee !important; /* very light red */
+}
+
+
+#reportTable tbody tr.next-threshold td {
+    font-weight: bold !important;
+}
+
+
