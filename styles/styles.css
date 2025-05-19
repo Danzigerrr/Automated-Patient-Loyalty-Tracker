@@ -10,7 +10,10 @@ h2 {
     margin-bottom: 20px;
 }
 
-input[type="file"],
+input[type="file"] {
+    display: block;
+    margin-bottom: 10px;
+}
 label {
     display: block;
     margin-bottom: 10px;
