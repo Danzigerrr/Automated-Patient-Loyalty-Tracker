@@ -125,8 +125,8 @@ function renderReport(patients) {
 
     // 1. map status → CSS class
     const groupClassMap = {
-        'Roczni Lojalni – Grupa 1': 'group-yearly1',
-        'Roczni Lojalni – Grupa 2': 'group-yearly2',
+        'Roczni Lojalni - Grupa 1': 'group-yearly1',
+        'Roczni Lojalni - Grupa 2': 'group-yearly2',
         '30+ Wizyt':               'group-over30',
         'Brak statusu':            'group-none'
     };
