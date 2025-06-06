@@ -29,15 +29,14 @@ function handleFile(ev) {
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        rows.pop();              // usuń ostatni wiersz („Suma…”)
-        const dataRows = rows.slice(1);  // a potem usuń nagłówek
+        // remove the first and the last rows
+        rows.pop();
+        const dataRows = rows.slice(1);
 
-        // pomiń nagłówek
         const raw = dataRows.map(r => ({
             imie:      r[1],
             nazwisko:  r[2],
-            wizytyTot: parseInt(r[15], 10) || 0,
-            visitInfo: r[9].trim()
+            visits: r[9].split(' - ')[0].trim()
         }));
 
         // grupowanie i budowanie historii dat
@@ -47,19 +46,10 @@ function handleFile(ev) {
             if (!grouped[key]) {
                 grouped[key] = { ...item, dates: [] };
             }
-            if (item.visitInfo !== '-' && item.visitInfo !== '') {
+            if (item.visits !== '-' && item.visits !== '') {
                 // "2025-02-24 - 4"
-                const datePart = item.visitInfo.split('-')[0].trim();
+                const datePart = item.visits;
                 grouped[key].dates.push(new Date(datePart));
-            }
-        });
-
-        // uzupełnij brak dat: wszystkie wizyty w dniu startu
-        Object.values(grouped).forEach(p => {
-            if (p.dates.length === 0 && p.wizytyTot > 0) {
-                for (let i = 0; i < p.wizytyTot; i++) {
-                    p.dates.push(new Date(startDate));
-                }
             }
         });
 
