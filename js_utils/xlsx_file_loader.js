@@ -74,31 +74,46 @@ function handleFile(ev) {
 // --- 4. Ewaluacja statusu lojalnościowego ---
 function evaluateLoyalty(p) {
     const now = new Date();
+
+    // 2a. read user‐configured threshold:
+    const thresholdInput = document.getElementById('highlightThreshold');
+    // parseInt → if invalid, fall back to 2:
+    let threshold = 2;
+    if (thresholdInput) {
+        const v = parseInt(thresholdInput.value, 10);
+        if (!isNaN(v) && v > 0) threshold = v;
+    }
+
     for (let rule of LOYALTY_RULES) {
         if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
             const nextThreshold = rule.max === Infinity
                 ? '0 wizyt'
                 : `${rule.max - p.visitsInPeriod} wizyt`;
+
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
                 : true;
+
             return {
-                status:       rule.name,
-                discount:     rule.discount,
+                status:        rule.name,
+                discount:      rule.discount,
                 nextThreshold,
-                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= 2),
+                // use the dynamic “threshold” here:
+                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= threshold),
                 expired
             };
         }
     }
+
     // jeśli poza progami → ile do pierwszego
     const first = LOYALTY_RULES[0];
     const toFirst = first.min - p.visitsInPeriod;
     return {
-        status:       'Brak statusu',
-        discount:     0,
-        nextThreshold:`${toFirst} wizyt`,
-        highlightNext: toFirst <= 3,
+        status:        'Brak statusu',
+        discount:      0,
+        nextThreshold: `${toFirst} wizyt`,
+        // use the same threshold for “no‐status” patients:
+        highlightNext: toFirst <= threshold,
         expired:       false
     };
 }

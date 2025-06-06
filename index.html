@@ -21,6 +21,19 @@
             <label for="startDate" class="form-label">Data – początek okresu</label>
             <input type="date" id="startDate" class="form-control" value="2025-01-01">
         </div>
+        <div class="col-md-3">
+            <label for="highlightThreshold" class="form-label">
+                Liczba wizyt do wyróżnienia
+            </label>
+            <input type="number"
+                   min="1"
+                   id="highlightThreshold"
+                   class="form-control"
+                   value="2">
+            <div class="form-text">
+                Pacjent zostanie wyróżniony, jeśli do kolejnego progu zostało ≤ tej wartości.
+            </div>
+        </div>
         <div class="col-md-4">
             <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
             <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
