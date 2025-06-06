@@ -7,6 +7,14 @@
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
+    <meta http-equiv="Content-Security-Policy"
+          content="
+        default-src 'self';
+        script-src  'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline';
+        style-src   'self' https://maxcdn.bootstrapcdn.com 'unsafe-inline';
+        font-src    'self' https://maxcdn.bootstrapcdn.com;
+      ">
+
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles/styles.css">
@@ -21,6 +29,19 @@
             <label for="startDate" class="form-label">Data – początek okresu</label>
             <input type="date" id="startDate" class="form-control" value="2025-01-01">
         </div>
+        <div class="col-md-3">
+            <label for="highlightThreshold" class="form-label">
+                Liczba wizyt do wyróżnienia
+            </label>
+            <input type="number"
+                   min="1"
+                   id="highlightThreshold"
+                   class="form-control"
+                   value="2">
+            <div class="form-text">
+                Pacjent zostanie wyróżniony, jeśli do kolejnego progu zostało ≤ tej wartości.
+            </div>
+        </div>
         <div class="col-md-4">
             <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
             <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
@@ -28,7 +49,7 @@
             <button onclick="hideOrShowFileUploadInstruction()">Pokaż/Ukryj instrukcję pobierania pliku</button>
 
             <!-- Instructions, hidden by default -->
-            <div id="instruction" class="alert alert-secondary py-2 mb-0 d-none" style="display: none">
+            <div id="instruction" >
                 <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
                 <ol class="mb-0 ps-3">
                     <li>Moje konto</li>
@@ -43,8 +64,6 @@
             </div>
         </div>
     </div>
-
-
 
     <section id="reportSection" class="mt-5" style="display:none;">
         <h3 class="mb-3">Raport Pacjentów</h3>

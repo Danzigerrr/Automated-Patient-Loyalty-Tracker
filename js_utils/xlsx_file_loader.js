@@ -29,15 +29,14 @@ function handleFile(ev) {
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        rows.pop();              // usuń ostatni wiersz („Suma…”)
-        const dataRows = rows.slice(1);  // a potem usuń nagłówek
+        // remove the first and the last rows
+        rows.pop();
+        const dataRows = rows.slice(1);
 
-        // pomiń nagłówek
         const raw = dataRows.map(r => ({
             imie:      r[1],
             nazwisko:  r[2],
-            wizytyTot: parseInt(r[15], 10) || 0,
-            visitInfo: r[9].trim()
+            visits: r[9].split(' - ')[0].trim()
         }));
 
         // grupowanie i budowanie historii dat
@@ -47,19 +46,10 @@ function handleFile(ev) {
             if (!grouped[key]) {
                 grouped[key] = { ...item, dates: [] };
             }
-            if (item.visitInfo !== '-' && item.visitInfo !== '') {
+            if (item.visits !== '-' && item.visits !== '') {
                 // "2025-02-24 - 4"
-                const datePart = item.visitInfo.split('-')[0].trim();
+                const datePart = item.visits;
                 grouped[key].dates.push(new Date(datePart));
-            }
-        });
-
-        // uzupełnij brak dat: wszystkie wizyty w dniu startu
-        Object.values(grouped).forEach(p => {
-            if (p.dates.length === 0 && p.wizytyTot > 0) {
-                for (let i = 0; i < p.wizytyTot; i++) {
-                    p.dates.push(new Date(startDate));
-                }
             }
         });
 
@@ -84,31 +74,46 @@ function handleFile(ev) {
 // --- 4. Ewaluacja statusu lojalnościowego ---
 function evaluateLoyalty(p) {
     const now = new Date();
+
+    // 2a. read user‐configured threshold:
+    const thresholdInput = document.getElementById('highlightThreshold');
+    // parseInt → if invalid, fall back to 2:
+    let threshold = 2;
+    if (thresholdInput) {
+        const v = parseInt(thresholdInput.value, 10);
+        if (!isNaN(v) && v > 0) threshold = v;
+    }
+
     for (let rule of LOYALTY_RULES) {
         if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
             const nextThreshold = rule.max === Infinity
                 ? '0 wizyt'
                 : `${rule.max - p.visitsInPeriod} wizyt`;
+
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
                 : true;
+
             return {
-                status:       rule.name,
-                discount:     rule.discount,
+                status:        rule.name,
+                discount:      rule.discount,
                 nextThreshold,
-                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= 2),
+                // use the dynamic “threshold” here:
+                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= threshold),
                 expired
             };
         }
     }
+
     // jeśli poza progami → ile do pierwszego
     const first = LOYALTY_RULES[0];
     const toFirst = first.min - p.visitsInPeriod;
     return {
-        status:       'Brak statusu',
-        discount:     0,
-        nextThreshold:`${toFirst} wizyt`,
-        highlightNext: toFirst <= 3,
+        status:        'Brak statusu',
+        discount:      0,
+        nextThreshold: `${toFirst} wizyt`,
+        // use the same threshold for “no‐status” patients:
+        highlightNext: toFirst <= threshold,
         expired:       false
     };
 }
@@ -120,8 +125,8 @@ function renderReport(patients) {
 
     // 1. map status → CSS class
     const groupClassMap = {
-        'Roczni Lojalni – Grupa 1': 'group-yearly1',
-        'Roczni Lojalni – Grupa 2': 'group-yearly2',
+        'Roczni Lojalni - Grupa 1': 'group-yearly1',
+        'Roczni Lojalni - Grupa 2': 'group-yearly2',
         '30+ Wizyt':               'group-over30',
         'Brak statusu':            'group-none'
     };
