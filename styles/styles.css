@@ -97,11 +97,6 @@ tr:hover {
 }
 
 
-/*!* Ensure dropdown-menu lays out items vertically *!*/
-/*#thresholdMenu {*/
-/*    display: block;*/
-/*}*/
-
 /* Ensure each dropdown-item takes full width and places checkbox/text in a row */
 #thresholdMenu .dropdown-item {
     display: flex;
@@ -118,3 +113,56 @@ tr:hover {
 .dropdown {
     overflow: visible;
 }
+
+/* Base styling for dropdown items */
+#thresholdMenu .dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;    /* soften corners */
+    margin-bottom: 0.25rem;     /* space between items */
+    background-color: #ffffff;   /* white base */
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Remove the bottom margin on the last item */
+#thresholdMenu .dropdown-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Checkbox spacing */
+#thresholdMenu .threshold-option {
+    margin-right: 0.75rem;
+}
+
+/* Hover state */
+#thresholdMenu .dropdown-item:hover {
+    background-color: #f0f4f8;   /* light, cool tone */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Checked state */
+#thresholdMenu .threshold-option:checked + span {
+    font-weight: 600;
+    color: #0d6efd;              /* Bootstrap primary blue */
+}
+
+/* When the label is active (clicked) */
+#thresholdMenu .dropdown-item:active {
+    background-color: #e2eaf6;
+}
+
+/* Make the scroll bar subtle if many items */
+#thresholdMenu {
+    max-height: 250px;
+    overflow-y: auto;
+}
+#thresholdMenu::-webkit-scrollbar {
+    width: 6px;
+}
+#thresholdMenu::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+

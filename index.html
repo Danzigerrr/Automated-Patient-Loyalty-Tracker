@@ -86,18 +86,20 @@
         <!-- Threshold value filter dropdown -->
         <div class="d-flex align-items-center mb-3 inline-filter">
             <label class="form-label mb-0 me-2">Filtruj według progu:</label>
-            <div class="dropdown">
+            <div class="dropdown" >
                 <button
                         class="btn btn-outline-secondary dropdown-toggle"
                         type="button"
                         id="thresholdDropdown"
                         data-toggle="dropdown"
                         aria-haspopup="true"
-                        aria-expanded="false">
+                        aria-expanded="false"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside">
                     Wybierz progi <span class="caret"></span>
                 </button>
                 <!-- Use a div instead of ul -->
-                <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu">
+                <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu" >
                     <!-- JS will inject <a class="dropdown-item">…</a> here -->
                 </div>
             </div>

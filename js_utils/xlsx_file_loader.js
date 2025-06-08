@@ -178,6 +178,7 @@ function populateThresholdDropdown(patients) {
     unique.forEach(val => {
         const id = 'th-' + val.replace(/\s+/g, '_');
 
+        // Create the label-as-item
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
@@ -188,17 +189,27 @@ function populateThresholdDropdown(patients) {
              value="${val}"
              id="${id}">
       ${val}
-      <p>
     `;
+
+        // **Prevent dropdown from closing when label clicked**
+        label.addEventListener('click', e => {
+            e.stopPropagation();
+            // Also manually toggle the checkbox
+            const cb = label.querySelector('input[type="checkbox"]');
+            cb.checked = !cb.checked;
+            applyAllFilters();
+        });
 
         menu.appendChild(label);
     });
 
-    // Re-bind filter logic
+    // Re-bind filter logic on checkboxes as well (if needed)
     document.querySelectorAll('.threshold-option').forEach(cb => {
         cb.addEventListener('change', applyAllFilters);
     });
 }
+
+
 
 
 
