@@ -135,7 +135,7 @@ function hideOrShowFileUploadInstruction() {
 
 // Sort by "Do kolejnej wizyty" column - using the threshold values
 // Toggle flag for ascending / descending of "Do kolejnej wizyty" column
-let thresholdSortAsc = true;
+let thresholdSortAsc = false;
 
 document.getElementById('sortThreshold')
     .addEventListener('click', () => {
@@ -233,9 +233,6 @@ function applyAllFilters() {
     });
 }
 
-
-
-// --- Modify renderReport to populate the dropdown ---
 function renderReport(patients) {
     const tbody = document.querySelector('#reportTable tbody');
     tbody.innerHTML = '';
@@ -247,11 +244,18 @@ function renderReport(patients) {
         'Brak statusu':            'group-none'
     };
 
+    // --- Sort patients by their numeric “nextThreshold” ascending ---
+    patients.sort((a, b) => {
+        const aTh = parseInt(evaluateLoyalty(a).nextThreshold, 10) || 0;
+        const bTh = parseInt(evaluateLoyalty(b).nextThreshold, 10) || 0;
+        return aTh - bTh;
+    });
+
     patients.forEach(p => {
         const result = evaluateLoyalty(p);
         const tr = document.createElement('tr');
         const groupCls = groupClassMap[result.status];
-        if (groupCls)       tr.classList.add(groupCls);
+        if (groupCls)            tr.classList.add(groupCls);
         if (result.highlightNext) tr.classList.add('next-threshold');
         if (result.expired)       tr.classList.add('reached');
 
@@ -265,16 +269,16 @@ function renderReport(patients) {
     `;
         tbody.appendChild(tr);
     });
+
     populateThresholdDropdown(patients);
 
-// Attach listeners once
-    document.querySelectorAll('.threshold-option').forEach(cb => {
-        cb.addEventListener('change', applyAllFilters);
-    });
+    // Attach listeners once
+    document.querySelectorAll('.threshold-option')
+        .forEach(cb => cb.addEventListener('change', applyAllFilters));
+    document.getElementById('patientSearch')
+        .addEventListener('keyup', applyAllFilters);
+    document.getElementById('patientSearch')
+        .addEventListener('input', applyAllFilters);
 
-    document.getElementById('patientSearch').addEventListener('keyup', applyAllFilters);
-    document.getElementById('patientSearch').addEventListener('input', applyAllFilters);
     document.getElementById('reportSection').style.display = 'block';
 }
-
-
