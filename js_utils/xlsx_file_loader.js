@@ -78,7 +78,7 @@ function evaluateLoyalty(p) {
     // 2a. read user‐configured threshold:
     const thresholdInput = document.getElementById('highlightThreshold');
     // parseInt → if invalid, fall back to 2:
-    let threshold = 2;
+    let threshold = 3;
     if (thresholdInput) {
         const v = parseInt(thresholdInput.value, 10);
         if (!isNaN(v) && v > 0) threshold = v;
@@ -167,3 +167,23 @@ function hideOrShowFileUploadInstruction() {
         x.style.display = "none";
     }
 }
+
+// After your renderReport function, set up the search filter:
+document.getElementById('patientSearch')
+    .addEventListener('keyup', () => {
+        const filter = document
+            .getElementById('patientSearch')
+            .value
+            .toLowerCase();
+
+        document
+            .querySelectorAll('#reportTable tbody tr')
+            .forEach(tr => {
+                const nameCell = tr.querySelector('td');
+                const name = nameCell.textContent.toLowerCase();
+                tr.style.display = name.includes(filter)
+                    ? ''
+                    : 'none';
+            });
+    });
+
