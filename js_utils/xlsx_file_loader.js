@@ -118,45 +118,6 @@ function evaluateLoyalty(p) {
     };
 }
 
-// --- 5. Renderowanie tabeli raportu ---
-function renderReport(patients) {
-    const tbody = document.querySelector('#reportTable tbody');
-    tbody.innerHTML = '';
-
-    // 1. map status → CSS class
-    const groupClassMap = {
-        'Roczni Lojalni - Grupa 1': 'group-yearly1',
-        'Roczni Lojalni - Grupa 2': 'group-yearly2',
-        '30+ Wizyt':               'group-over30',
-        'Brak statusu':            'group-none'
-    };
-
-    patients.forEach(p => {
-        const result = evaluateLoyalty(p);
-
-        // 2. create row and apply classes
-        const tr = document.createElement('tr');
-        const groupCls = groupClassMap[result.status];
-        if (groupCls)       tr.classList.add(groupCls);
-        if (result.highlightNext) tr.classList.add('next-threshold');
-        if (result.expired)       tr.classList.add('reached');
-
-        // 3. fill content
-        tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.visitsInPeriod}</td>
-      <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
-      <td>${result.status}</td>
-      <td>${result.nextThreshold}</td>
-      <td>${result.discount}%</td>
-    `;
-
-        // 4. append to table
-        tbody.appendChild(tr);
-    });
-
-    document.getElementById('reportSection').style.display = 'block';
-}
 
 
 function hideOrShowFileUploadInstruction() {
@@ -168,22 +129,141 @@ function hideOrShowFileUploadInstruction() {
     }
 }
 
-// After your renderReport function, set up the search filter:
-document.getElementById('patientSearch')
-    .addEventListener('keyup', () => {
-        const filter = document
-            .getElementById('patientSearch')
-            .value
-            .toLowerCase();
 
-        document
-            .querySelectorAll('#reportTable tbody tr')
-            .forEach(tr => {
-                const nameCell = tr.querySelector('td');
-                const name = nameCell.textContent.toLowerCase();
-                tr.style.display = name.includes(filter)
-                    ? ''
-                    : 'none';
-            });
+// TABLE FILTERING AND SORTING
+
+
+// Sort by "Do kolejnej wizyty" column - using the threshold values
+// Toggle flag for ascending / descending of "Do kolejnej wizyty" column
+let thresholdSortAsc = true;
+
+document.getElementById('sortThreshold')
+    .addEventListener('click', () => {
+        const tbody = document.querySelector('#reportTable tbody');
+        // Grab existing rows
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        // Sort them by integer in 5th cell (zero-based index 4)
+        rows.sort((a, b) => {
+            const aText = a.children[4].textContent.trim();
+            const bText = b.children[4].textContent.trim();
+            const aNum  = parseInt(aText, 10) || 0;
+            const bNum  = parseInt(bText, 10) || 0;
+            return thresholdSortAsc
+                ? aNum - bNum
+                : bNum - aNum;
+        });
+
+        // Clear and re-append in sorted order
+        tbody.innerHTML = '';
+        rows.forEach(r => tbody.appendChild(r));
+
+        // Flip the sort order for next click
+        thresholdSortAsc = !thresholdSortAsc;
     });
+
+
+// THRESHOLD FILTERING
+// Populate the dropdown with unique "nextThreshold" values
+function populateThresholdDropdown(patients) {
+    const menu = document.getElementById('thresholdMenu');
+    menu.innerHTML = '';  // clear old items
+
+    const unique = Array.from(new Set(
+        patients.map(p => evaluateLoyalty(p).nextThreshold)
+    )).sort((a, b) =>
+        (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)
+    );
+
+    unique.forEach(val => {
+        const id = 'th-' + val.replace(/\s+/g, '_');
+
+        const label = document.createElement('label');
+        label.className = 'dropdown-item form-check mb-0';
+        label.style.cursor = 'pointer';
+
+        label.innerHTML = `
+      <input class="form-check-input threshold-option me-2"
+             type="checkbox"
+             value="${val}"
+             id="${id}">
+      ${val}
+      <p>
+    `;
+
+        menu.appendChild(label);
+    });
+
+    // Re-bind filter logic
+    document.querySelectorAll('.threshold-option').forEach(cb => {
+        cb.addEventListener('change', applyAllFilters);
+    });
+}
+
+
+
+// Apply both name search + threshold dropdown filtering
+function applyAllFilters() {
+    const nameFilter = document.getElementById('patientSearch').value.toLowerCase();
+
+    // Gather all checked thresholds
+    const selected = Array.from(document.querySelectorAll('.threshold-option:checked'))
+        .map(cb => cb.value);
+    const matchAll = selected.length === 0;
+
+    document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
+        const name = tr.children[0].textContent.toLowerCase();
+        const threshold = tr.children[4].textContent.trim();
+
+        const nameOk = name.includes(nameFilter);
+        const thresholdOk = matchAll || selected.includes(threshold);
+
+        tr.style.display = (nameOk && thresholdOk) ? '' : 'none';
+    });
+}
+
+
+
+// --- Modify renderReport to populate the dropdown ---
+function renderReport(patients) {
+    const tbody = document.querySelector('#reportTable tbody');
+    tbody.innerHTML = '';
+
+    const groupClassMap = {
+        'Roczni Lojalni - Grupa 1': 'group-yearly1',
+        'Roczni Lojalni - Grupa 2': 'group-yearly2',
+        '30+ Wizyt':               'group-over30',
+        'Brak statusu':            'group-none'
+    };
+
+    patients.forEach(p => {
+        const result = evaluateLoyalty(p);
+        const tr = document.createElement('tr');
+        const groupCls = groupClassMap[result.status];
+        if (groupCls)       tr.classList.add(groupCls);
+        if (result.highlightNext) tr.classList.add('next-threshold');
+        if (result.expired)       tr.classList.add('reached');
+
+        tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.visitsInPeriod}</td>
+      <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
+      <td>${result.status}</td>
+      <td>${result.nextThreshold}</td>
+      <td>${result.discount}%</td>
+    `;
+        tbody.appendChild(tr);
+    });
+    populateThresholdDropdown(patients);
+
+// Attach listeners once
+    document.querySelectorAll('.threshold-option').forEach(cb => {
+        cb.addEventListener('change', applyAllFilters);
+    });
+
+    document.getElementById('patientSearch').addEventListener('keyup', applyAllFilters);
+    document.getElementById('patientSearch').addEventListener('input', applyAllFilters);
+    document.getElementById('reportSection').style.display = 'block';
+}
+
 

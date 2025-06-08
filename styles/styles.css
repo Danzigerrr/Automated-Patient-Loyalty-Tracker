@@ -97,3 +97,24 @@ tr:hover {
 }
 
 
+/*!* Ensure dropdown-menu lays out items vertically *!*/
+/*#thresholdMenu {*/
+/*    display: block;*/
+/*}*/
+
+/* Ensure each dropdown-item takes full width and places checkbox/text in a row */
+#thresholdMenu .dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Add spacing between checkbox and text */
+#thresholdMenu .threshold-option {
+    margin-right: 0.5rem;
+}
+
+/* Prevent dropdown from breaking layout */
+.dropdown {
+    overflow: visible;
+}
