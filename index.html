@@ -5,68 +5,105 @@
     <meta charset="UTF-8">
     <title>FizjoActive - System Lojalnościowy</title>
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
 
     <meta http-equiv="Content-Security-Policy"
           content="
         default-src 'self';
-        script-src  'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline';
+        script-src  'self' https://unpkg.com https://cdn.jsdelivr.net https://maxcdn.bootstrapcdn.com https://code.jquery.com 'unsafe-inline';
         style-src   'self' https://maxcdn.bootstrapcdn.com 'unsafe-inline';
         font-src    'self' https://maxcdn.bootstrapcdn.com;
       ">
 
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles/styles.css">
+
 </head>
 
 <body>
 <div class="container py-4">
-    <h2 class="mb-4 text-primary">FizjoActive - System Lojalnościowy</h2>
+    <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
-    <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-            <label for="startDate" class="form-label">Data – początek okresu</label>
-            <input type="date" id="startDate" class="form-control" value="2025-01-01">
-        </div>
-        <div class="col-md-3">
-            <label for="highlightThreshold" class="form-label">
-                Liczba wizyt do wyróżnienia
-            </label>
-            <input type="number"
-                   min="1"
-                   id="highlightThreshold"
-                   class="form-control"
-                   value="2">
-            <div class="form-text">
-                Pacjent zostanie wyróżniony, jeśli do kolejnego progu zostało ≤ tej wartości.
+    <section id="configurationSection" class="mt-5">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="startDate" class="form-label">Data – początek okresu</label>
+                <input type="date" id="startDate" class="form-control" value="2025-01-01">
+            </div>
+            <div class="col-md-3">
+                <label for="highlightThreshold" class="form-label">
+                    Liczba wizyt do wyróżnienia
+                </label>
+                <input type="number"
+                       min="1"
+                       id="highlightThreshold"
+                       class="form-control"
+                       data-toggle="dropdown"
+                       value="3">
+                <div class="form-text">
+                    Pacjent zostanie wyróżniony, jeśli do kolejnego progu zostało ≤ tej wartości.
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
+                <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
+
+                <button onclick="hideOrShowFileUploadInstruction()">Pokaż/Ukryj instrukcję pobierania pliku</button>
+
+                <!-- Instructions, hidden by default -->
+                <div id="instruction" style="display: none;">
+                    <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
+                    <ol class="mb-0 ps-3">
+                        <li>Moje konto</li>
+                        <li>Raporty</li>
+                        <li>Pacjenci
+                            <ol class="mt-1 mb-0 ps-3">
+                                <li>Wybierz opcję „Wizyty” (niebieski przycisk)</li>
+                                <li>Pobierz XLSX</li>
+                            </ol>
+                        </li>
+                    </ol>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
-            <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
+    </section>
 
-            <button onclick="hideOrShowFileUploadInstruction()">Pokaż/Ukryj instrukcję pobierania pliku</button>
-
-            <!-- Instructions, hidden by default -->
-            <div id="instruction" >
-                <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
-                <ol class="mb-0 ps-3">
-                    <li>Moje konto</li>
-                    <li>Raporty</li>
-                    <li>Pacjenci
-                        <ol class="mt-1 mb-0 ps-3">
-                            <li>Wybierz opcję „Wizyty” (niebieski przycisk)</li>
-                            <li>Pobierz XLSX</li>
-                        </ol>
-                    </li>
-                </ol>
-            </div>
-        </div>
-    </div>
 
     <section id="reportSection" class="mt-5" style="display:none;">
         <h3 class="mb-3">Raport Pacjentów</h3>
+
+        <!-- Search bar for patient by its name -->
+        <div class="mb-3">
+            <input type="text"
+                   id="patientSearch"
+                   class="form-control"
+                   placeholder="Szukaj pacjenta…">
+        </div>
+
+        <!-- Threshold value filter dropdown -->
+        <div class="d-flex align-items-center mb-3 inline-filter">
+            <label class="form-label mb-0 me-2">Filtruj według progu:</label>
+            <div class="dropdown" >
+                <button
+                        class="btn btn-outline-secondary dropdown-toggle"
+                        type="button"
+                        id="thresholdDropdown"
+                        data-toggle="dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        data-bs-auto-close="outside">
+                    Wybierz progi <span class="caret"></span>
+                </button>
+                <!-- Use a div instead of ul -->
+                <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu" >
+                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+                </div>
+            </div>
+        </div>
+
         <table id="reportTable"
                class="table table-striped table-hover align-middle">
             <thead class="table-light">
@@ -75,13 +112,19 @@
                 <th>Wizyty w tym okresie</th>
                 <th>Data ostatniej wizyty</th>
                 <th>Obecny Status</th>
-                <th>Do kolejnego progu</th>
+                <th>
+                    Do kolejnego progu
+                    <button id="sortThreshold" class="btn btn-sm btn-outline-secondary ms-2">
+                        ↕
+                    </button>
+                </th>
                 <th>Zniżka</th>
             </tr>
             </thead>
             <tbody></tbody>
         </table>
     </section>
+
 </div>
 
 
