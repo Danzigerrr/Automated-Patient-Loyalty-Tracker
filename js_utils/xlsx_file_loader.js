@@ -277,8 +277,7 @@ function renderReport(patients) {
         .forEach(cb => cb.addEventListener('change', applyAllFilters));
     document.getElementById('patientSearch')
         .addEventListener('keyup', applyAllFilters);
-    document.getElementById('patientSearch')
-        .addEventListener('input', applyAllFilters);
+
 
     document.getElementById('reportSection').style.display = 'block';
 }
