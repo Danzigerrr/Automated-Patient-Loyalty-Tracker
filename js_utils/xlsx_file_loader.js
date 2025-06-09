@@ -1,19 +1,89 @@
-// --- 1. Definicja reguł lojalnościowych ---
 const LOYALTY_RULES = [
-    { name: 'Roczni Lojalni – Grupa 1', min: 10, max: 20, discount: 5, validityDays: 90 },
-    { name: 'Roczni Lojalni – Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180 },
-    { name: '30+ Wizyt',               min: 30, max: Infinity, discount: 10, validityDays: 365 }
+    {
+        name:       '30+ Wizyt',
+        min:        30,
+        max:        Infinity,
+        discount:   10,
+        validityDays: 365,
+        visitField: 'visitsInTotal'     // use total‐ever count
+    },
+    {
+        name:       'Roczni Lojalni – Grupa 1',
+        min:        10,
+        max:        20,
+        discount:   5,
+        validityDays: 90,
+        visitField: 'visitsInPeriod'    // use last‐365‐days count
+    },
+    {
+        name:       'Roczni Lojalni – Grupa 2',
+        min:        20,
+        max:        30,
+        discount:   10,
+        validityDays: 180,
+        visitField: 'visitsInPeriod'    // use last‐365‐days count
+    }
 ];
 
-// --- 2. Pomocnik do obliczeń datowych ---
+const COLUMN_TO_INDEX_MAP = {
+    "Name": 1,
+    "Surname": 2,
+    "Visit Info": 9
+};
+
+const HTML_COLUMN_TO_INDEX_MAP = {
+    "Name and Surname": 0,
+    "Threshold": 5
+};
+
+// Helper function to calculate days between two dates
 function daysBetween(a, b) {
     return (b - a) / (1000 * 60 * 60 * 24);
 }
 
-// --- 3. Wczytanie i parsowanie pliku XLSX ---
+// Set default starting date to one year ago, with max attribute to today
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('startDate');
+    const today = new Date();
+    const lastYear = new Date();
+    lastYear.setFullYear(today.getFullYear() - 1);
+
+    // format YYYY-MM-DD
+    const fmt = d => d.toISOString().split('T')[0];
+
+    inp.value = fmt(lastYear);
+    inp.max   = fmt(today);
+});
+
+
+// Handle file input change event
 document.getElementById('fileInput')
     .addEventListener('change', handleFile);
 
+
+// Bootstrap Table row styling
+function rowStyle(row) {
+        const groupClassMap = {
+        'Roczni Lojalni - Grupa 1': 'group-yearly1',
+        'Roczni Lojalni - Grupa 2': 'group-yearly2',
+        '30+ Wizyt':               'group-over30',
+        'Brak statusu':            'group-none'
+        };
+
+    const result = evaluateLoyalty({
+        visitsInPeriod: row.visitsInPeriod,
+        visitsInTotal:  row.visitsInTotal,
+        lastVisit:      lastVisitDateObj(row.lastVisit)
+    });
+    const classes = [];
+    if (result.highlightNext) classes.push('next-threshold');
+    if (result.expired)       classes.push('reached');
+    const groupClass = groupClassMap[result.status];
+    if (groupClass)            classes.push(groupClass);
+    return { classes: classes.join(' ') };
+}
+
+// Handle file input and parse the Excel file
 function handleFile(ev) {
     const file = ev.target.files[0];
     if (!file) return;
@@ -24,60 +94,104 @@ function handleFile(ev) {
 
     const reader = new FileReader();
     reader.onload = e => {
-        const data = new Uint8Array(e.target.result);
-        const wb   = XLSX.read(data, { type: 'array' });
-        const ws   = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        const data   = new Uint8Array(e.target.result);
+        const wb     = XLSX.read(data, { type: 'array' });
+        const ws     = wb.Sheets[wb.SheetNames[0]];
+        const rows   = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        // remove the first and the last rows
-        rows.pop();
+        rows.pop();                  // drop “Suma”
         const dataRows = rows.slice(1);
 
+        // parse raw
         const raw = dataRows.map(r => ({
-            imie:      r[1],
-            nazwisko:  r[2],
-            visits: r[9].split(' - ')[0].trim()
+            name:             r[COLUMN_TO_INDEX_MAP["Name"]],
+            surname:          r[COLUMN_TO_INDEX_MAP["Surname"]],
+            visitDate:        r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[0].trim(),
+            totalVisitsCount: parseInt(r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[1], 10) || 0
         }));
 
-        // grupowanie i budowanie historii dat
+        // group by patient
         const grouped = {};
         raw.forEach(item => {
-            const key = `${item.imie} ${item.nazwisko}`;
-            if (!grouped[key]) {
-                grouped[key] = { ...item, dates: [] };
+            const key = `${item.name} ${item.surname}`;
+            if (!grouped[key]) grouped[key] = { dates: [], totalVisits: 0 };
+            if (item.visitDate && item.visitDate !== '-') {
+                grouped[key].dates.push(new Date(item.visitDate));
             }
-            if (item.visits !== '-' && item.visits !== '') {
-                // "2025-02-24 - 4"
-                const datePart = item.visits;
-                grouped[key].dates.push(new Date(datePart));
-            }
+            grouped[key].totalVisits = item.totalVisitsCount;
         });
 
-        // przygotuj obiekt pacjenta z liczbą wizyt i datą ostatniej wizyty
-        const patients = Object.values(grouped).map(p => {
+        // build final array with all bootstrap-table fields
+        const patients = Object.entries(grouped).map(([fullName, p]) => {
             const visitsInPeriod = p.dates.filter(d => d >= startDate).length;
-            const lastVisit = p.dates.length
-                ? new Date(Math.max(...p.dates.map(d => d.getTime())))
+            const lastVisitDate  = p.dates.length
+                ? new Date(Math.max(...p.dates.map(d=>d.getTime())))
                 : null;
-            return {
-                name:            `${p.imie} ${p.nazwisko}`,
+
+            const row = {
+                name:            fullName,
                 visitsInPeriod,
-                lastVisit
+                visitsInTotal:   p.totalVisits,
+                lastVisit:       lastVisitDate
+                    ? lastVisitDate.toISOString().split('T')[0]
+                    : '',
             };
+
+            // evaluate loyalty once, attach to row
+            const result = evaluateLoyalty({
+                visitsInPeriod: row.visitsInPeriod,
+                visitsInTotal:  row.visitsInTotal,
+                lastVisit:      lastVisitDate
+            });
+            row.status    = result.status;
+            row.threshold = result.nextThreshold;
+            row.discount  = result.discount;
+
+            return row;
         });
 
-        renderReport(patients);
+            populateThresholdDropdown(patients);
+
+            // Attach listeners once
+            document.querySelectorAll('.threshold-option')
+                .forEach(cb => cb.addEventListener('change', applyAllFilters));
+            document.getElementById('patientSearch')
+                .addEventListener('keyup', applyAllFilters);
+
+
+            document.getElementById('reportSection').style.display = 'block';
+
+        // re-init table with precomputed data
+        $('#reportTable')
+            .bootstrapTable('destroy')
+            .bootstrapTable({
+                data:          patients,
+                showColumns:   true,
+                showMultiSort: true,
+                sortPriority: [
+                    { sortName: 'threshold',      sortOrder: 'asc'  },
+                    { sortName: 'visitsInPeriod', sortOrder: 'desc' }
+                ],
+                rowStyle:      rowStyle
+            })
+        ;
     };
     reader.readAsArrayBuffer(file);
 }
 
-// --- 4. Ewaluacja statusu lojalnościowego ---
+
+// util to convert lastVisit string back to Date
+function lastVisitDateObj(str) {
+    return str ? new Date(str) : null;
+}
+
+
+// Evaluate loyalty status based on the rules defined above
 function evaluateLoyalty(p) {
     const now = new Date();
 
-    // 2a. read user‐configured threshold:
+    // read dynamic highlight threshold:
     const thresholdInput = document.getElementById('highlightThreshold');
-    // parseInt → if invalid, fall back to 2:
     let threshold = 3;
     if (thresholdInput) {
         const v = parseInt(thresholdInput.value, 10);
@@ -85,11 +199,15 @@ function evaluateLoyalty(p) {
     }
 
     for (let rule of LOYALTY_RULES) {
-        if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
-            const nextThreshold = rule.max === Infinity
-                ? '0 wizyt'
-                : `${rule.max - p.visitsInPeriod} wizyt`;
+        // pick the correct count based on the rule
+        const count = p[rule.visitField] || 0;
 
+        if (count >= rule.min && count < rule.max) {
+            const nextThreshold = rule.max === Infinity
+                ? '0'
+                : `${rule.max - count}`;
+
+            // expiration always based on lastVisit date
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
                 : true;
@@ -98,28 +216,26 @@ function evaluateLoyalty(p) {
                 status:        rule.name,
                 discount:      rule.discount,
                 nextThreshold,
-                // use the dynamic “threshold” here:
-                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= threshold),
+                highlightNext: (rule.max !== Infinity && (rule.max - count) <= threshold),
                 expired
             };
         }
     }
 
-    // jeśli poza progami → ile do pierwszego
+    // no rule matched → “Brak statusu”
     const first = LOYALTY_RULES[0];
-    const toFirst = first.min - p.visitsInPeriod;
+    const baseCount = p[first.visitField] || 0;
+    const toFirst   = first.min - baseCount;
     return {
         status:        'Brak statusu',
         discount:      0,
-        nextThreshold: `${toFirst} wizyt`,
-        // use the same threshold for “no‐status” patients:
+        nextThreshold: `${toFirst}`,
         highlightNext: toFirst <= threshold,
         expired:       false
     };
 }
 
-
-
+// Toggle visibility of the file upload instruction
 function hideOrShowFileUploadInstruction() {
     var x = document.getElementById("instruction");
     if (x.style.display === "none") {
@@ -130,40 +246,7 @@ function hideOrShowFileUploadInstruction() {
 }
 
 
-// TABLE FILTERING AND SORTING
 
-
-// Sort by "Do kolejnej wizyty" column - using the threshold values
-// Toggle flag for ascending / descending of "Do kolejnej wizyty" column
-let thresholdSortAsc = false;
-
-document.getElementById('sortThreshold')
-    .addEventListener('click', () => {
-        const tbody = document.querySelector('#reportTable tbody');
-        // Grab existing rows
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        // Sort them by integer in 5th cell (zero-based index 4)
-        rows.sort((a, b) => {
-            const aText = a.children[4].textContent.trim();
-            const bText = b.children[4].textContent.trim();
-            const aNum  = parseInt(aText, 10) || 0;
-            const bNum  = parseInt(bText, 10) || 0;
-            return thresholdSortAsc
-                ? aNum - bNum
-                : bNum - aNum;
-        });
-
-        // Clear and re-append in sorted order
-        tbody.innerHTML = '';
-        rows.forEach(r => tbody.appendChild(r));
-
-        // Flip the sort order for next click
-        thresholdSortAsc = !thresholdSortAsc;
-    });
-
-
-// THRESHOLD FILTERING
 // Populate the dropdown with unique "nextThreshold" values
 function populateThresholdDropdown(patients) {
     const menu = document.getElementById('thresholdMenu');
@@ -210,9 +293,6 @@ function populateThresholdDropdown(patients) {
 }
 
 
-
-
-
 // Apply both name search + threshold dropdown filtering
 function applyAllFilters() {
     const nameFilter = document.getElementById('patientSearch').value.toLowerCase();
@@ -223,8 +303,8 @@ function applyAllFilters() {
     const matchAll = selected.length === 0;
 
     document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
-        const name = tr.children[0].textContent.toLowerCase();
-        const threshold = tr.children[4].textContent.trim();
+        const name = tr.children[HTML_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
+        const threshold = tr.children[HTML_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
 
         const nameOk = name.includes(nameFilter);
         const thresholdOk = matchAll || selected.includes(threshold);
@@ -233,51 +313,3 @@ function applyAllFilters() {
     });
 }
 
-function renderReport(patients) {
-    const tbody = document.querySelector('#reportTable tbody');
-    tbody.innerHTML = '';
-
-    const groupClassMap = {
-        'Roczni Lojalni - Grupa 1': 'group-yearly1',
-        'Roczni Lojalni - Grupa 2': 'group-yearly2',
-        '30+ Wizyt':               'group-over30',
-        'Brak statusu':            'group-none'
-    };
-
-    // --- Sort patients by their numeric “nextThreshold” ascending ---
-    patients.sort((a, b) => {
-        const aTh = parseInt(evaluateLoyalty(a).nextThreshold, 10) || 0;
-        const bTh = parseInt(evaluateLoyalty(b).nextThreshold, 10) || 0;
-        return aTh - bTh;
-    });
-
-    patients.forEach(p => {
-        const result = evaluateLoyalty(p);
-        const tr = document.createElement('tr');
-        const groupCls = groupClassMap[result.status];
-        if (groupCls)            tr.classList.add(groupCls);
-        if (result.highlightNext) tr.classList.add('next-threshold');
-        if (result.expired)       tr.classList.add('reached');
-
-        tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.visitsInPeriod}</td>
-      <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
-      <td>${result.status}</td>
-      <td>${result.nextThreshold}</td>
-      <td>${result.discount}%</td>
-    `;
-        tbody.appendChild(tr);
-    });
-
-    populateThresholdDropdown(patients);
-
-    // Attach listeners once
-    document.querySelectorAll('.threshold-option')
-        .forEach(cb => cb.addEventListener('change', applyAllFilters));
-    document.getElementById('patientSearch')
-        .addEventListener('keyup', applyAllFilters);
-
-
-    document.getElementById('reportSection').style.display = 'block';
-}
