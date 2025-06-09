@@ -165,4 +165,10 @@ tr:hover {
     background-color: rgba(0,0,0,0.1);
     border-radius: 3px;
 }
+/* Make the "Show Columns" dropdown wider */
+.bootstrap-table .columns .dropdown-menu {
+    min-width: 250px !important;
+    max-width: 400px;
+}
+
 

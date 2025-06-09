@@ -155,7 +155,6 @@ function handleFile(ev) {
             .bootstrapTable('destroy')
             .bootstrapTable({
                 data:          patients,
-                search:        true,
                 showColumns:   true,
                 showMultiSort: true,
                 sortPriority: [
@@ -164,7 +163,6 @@ function handleFile(ev) {
                 ],
                 rowStyle:      rowStyle
             })
-            .bootstrapTable('load', patients)
         ;
     };
     reader.readAsArrayBuffer(file);

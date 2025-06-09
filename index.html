@@ -84,18 +84,25 @@
     <section id="reportSection" class="mt-5" style="display:none;">
         <h3 class="mb-3">Raport Pacjentów</h3>
 
-        <!-- Search bar for patient by its name -->
-        <div class="mb-3">
-            <input type="text"
-                   id="patientSearch"
-                   class="form-control"
-                   placeholder="Szukaj pacjenta…">
-        </div>
+        <form class="vstack gap-3 mb-4">
+            <!-- Row 1: Search by patient name -->
+            <div class="input-group">
+                <span class="input-group-text" id="search-addon">🔍 Szukaj pacjenta…
+                    <i class="bi bi-search"></i>
+                </span>
+                <input
+                        type="text"
+                        id="patientSearch"
+                        class="form-control"
+                        placeholder="Imię i nazwisko"
+                        aria-label="Search patient"
+                        aria-describedby="search-addon"
+                >
+            </div>
 
-        <!-- Threshold value filter dropdown -->
-        <div class="d-flex align-items-center mb-3 inline-filter">
-            <label class="form-label mb-0 me-2">Filtruj według progu:</label>
-            <div class="dropdown" >
+            <br>
+            <!-- Row 2: Threshold filter dropdown -->
+            <div class="input-group">
                 <button
                         class="btn btn-outline-secondary dropdown-toggle"
                         type="button"
@@ -104,14 +111,16 @@
                         aria-haspopup="true"
                         aria-expanded="false"
                         data-bs-auto-close="outside">
-                    Wybierz progi <span class="caret"></span>
+                    Wybierz liczbę wizyt to zmiany statusu <span class="caret"></span>
                 </button>
                 <!-- Use a div instead of ul -->
                 <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu" >
                     <!-- JS will inject <a class="dropdown-item">…</a> here -->
                 </div>
             </div>
-        </div>
+        </form>
+
+        <br>
 
         <div>
 
@@ -119,9 +128,9 @@
                     id="reportTable"
                     class="table"
                     data-toggle="table"
-                    data-search="true"
                     data-show-columns="true"
                     data-show-multi-sort="true"
+                    data-buttons-align="left"
                     data-sort-priority='[
                                          {"sortName":"threshold","sortOrder":"asc"},
                                          {"sortName":"visitsInPeriod","sortOrder":"desc"}
