@@ -1,9 +1,31 @@
 // --- 1. Definicja reguł lojalnościowych ---
 const LOYALTY_RULES = [
-    { name: 'Roczni Lojalni – Grupa 1', min: 10, max: 20, discount: 5, validityDays: 90 },
-    { name: 'Roczni Lojalni – Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180 },
-    { name: '30+ Wizyt',               min: 30, max: Infinity, discount: 10, validityDays: 365 }
+    {
+        name:       '30+ Wizyt',
+        min:        30,
+        max:        Infinity,
+        discount:   10,
+        validityDays: 365,
+        visitField: 'visitsInTotal'     // use total‐ever count
+    },
+    {
+        name:       'Roczni Lojalni – Grupa 1',
+        min:        10,
+        max:        20,
+        discount:   5,
+        validityDays: 90,
+        visitField: 'visitsInPeriod'    // use last‐365‐days count
+    },
+    {
+        name:       'Roczni Lojalni – Grupa 2',
+        min:        20,
+        max:        30,
+        discount:   10,
+        validityDays: 180,
+        visitField: 'visitsInPeriod'    // use last‐365‐days count
+    }
 ];
+
 
 // --- 2. Pomocnik do obliczeń datowych ---
 function daysBetween(a, b) {
@@ -95,9 +117,8 @@ function handleFile(ev) {
 function evaluateLoyalty(p) {
     const now = new Date();
 
-    // 2a. read user‐configured threshold:
+    // read dynamic highlight threshold:
     const thresholdInput = document.getElementById('highlightThreshold');
-    // parseInt → if invalid, fall back to 2:
     let threshold = 3;
     if (thresholdInput) {
         const v = parseInt(thresholdInput.value, 10);
@@ -105,11 +126,15 @@ function evaluateLoyalty(p) {
     }
 
     for (let rule of LOYALTY_RULES) {
-        if (p.visitsInPeriod >= rule.min && p.visitsInPeriod < rule.max) {
+        // pick the correct count based on the rule
+        const count = p[rule.visitField] || 0;
+
+        if (count >= rule.min && count < rule.max) {
             const nextThreshold = rule.max === Infinity
                 ? '0 wizyt'
-                : `${rule.max - p.visitsInPeriod} wizyt`;
+                : `${rule.max - count} wizyt`;
 
+            // expiration always based on lastVisit date
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
                 : true;
@@ -118,25 +143,25 @@ function evaluateLoyalty(p) {
                 status:        rule.name,
                 discount:      rule.discount,
                 nextThreshold,
-                // use the dynamic “threshold” here:
-                highlightNext: (rule.max !== Infinity && (rule.max - p.visitsInPeriod) <= threshold),
+                highlightNext: (rule.max !== Infinity && (rule.max - count) <= threshold),
                 expired
             };
         }
     }
 
-    // jeśli poza progami → ile do pierwszego
+    // no rule matched → “Brak statusu”
     const first = LOYALTY_RULES[0];
-    const toFirst = first.min - p.visitsInPeriod;
+    const baseCount = p[first.visitField] || 0;
+    const toFirst   = first.min - baseCount;
     return {
         status:        'Brak statusu',
         discount:      0,
         nextThreshold: `${toFirst} wizyt`,
-        // use the same threshold for “no‐status” patients:
         highlightNext: toFirst <= threshold,
         expired:       false
     };
 }
+
 
 
 
@@ -244,7 +269,7 @@ function applyAllFilters() {
 
     document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
         const name = tr.children[0].textContent.toLowerCase();
-        const threshold = tr.children[4].textContent.trim();
+        const threshold = tr.children[5].textContent.trim();
 
         const nameOk = name.includes(nameFilter);
         const thresholdOk = matchAll || selected.includes(threshold);
