@@ -25,6 +25,17 @@ const LOYALTY_RULES = [
     }
 ];
 
+const COLUMN_TO_INDEX_MAP = {
+    "Name": 1,
+    "Surname": 2,
+    "Visit Info": 9
+};
+
+const HTML_COLUMN_TO_INDEX_MAP = {
+    "Name and Surname": 0,
+    "Threshold": 5
+};
+
 // Helper function to calculate days between two dates
 function daysBetween(a, b) {
     return (b - a) / (1000 * 60 * 60 * 24);
@@ -93,10 +104,10 @@ function handleFile(ev) {
 
         // parse raw
         const raw = dataRows.map(r => ({
-            name:             r[1],
-            surname:          r[2],
-            visitDate:        r[9].split(' - ')[0].trim(),
-            totalVisitsCount: parseInt(r[9].split(' - ')[1], 10) || 0
+            name:             r[COLUMN_TO_INDEX_MAP["Name"]],
+            surname:          r[COLUMN_TO_INDEX_MAP["Surname"]],
+            visitDate:        r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[0].trim(),
+            totalVisitsCount: parseInt(r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[1], 10) || 0
         }));
 
         // group by patient
@@ -292,8 +303,8 @@ function applyAllFilters() {
     const matchAll = selected.length === 0;
 
     document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
-        const name = tr.children[0].textContent.toLowerCase();
-        const threshold = tr.children[5].textContent.trim();
+        const name = tr.children[HTML_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
+        const threshold = tr.children[HTML_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
 
         const nameOk = name.includes(nameFilter);
         const thresholdOk = matchAll || selected.includes(threshold);
