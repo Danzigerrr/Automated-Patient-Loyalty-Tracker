@@ -9,9 +9,10 @@
     <meta http-equiv="Content-Security-Policy"
           content="
         default-src 'self';
-        script-src  'self' https://unpkg.com https://cdn.jsdelivr.net https://maxcdn.bootstrapcdn.com https://code.jquery.com 'unsafe-inline';
-        style-src   'self' https://maxcdn.bootstrapcdn.com 'unsafe-inline';
-        font-src    'self' https://maxcdn.bootstrapcdn.com;
+        script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://maxcdn.bootstrapcdn.com https://code.jquery.com 'unsafe-inline';
+        style-src 'self' https://maxcdn.bootstrapcdn.com https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline';
+        font-src 'self' https://maxcdn.bootstrapcdn.com;
+        img-src 'self' data: https://unpkg.com https://cdn.jsdelivr.net https://maxcdn.bootstrapcdn.com https://code.jquery.com 'unsafe-inline';
       ">
 
 
@@ -20,6 +21,10 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/multiple-sort/bootstrap-table-multiple-sort.js"></script>
 
 </head>
 
@@ -108,30 +113,56 @@
             </div>
         </div>
 
-        <table id="reportTable"
-               class="table table-striped table-hover align-middle">
-            <thead class="table-light">
-            <tr>
-                <th>Pacjent</th>
-                <th>Wizyty w tym okresie</th>
-                <th>Wizyty w systemie (wszystkie)</th>
-                <th>Data ostatniej wizyty</th>
-                <th>Obecny Status</th>
-                <th>
-                    Do kolejnego progu
-                    <button id="sortThreshold" class="btn btn-sm">
-                        ↕
-                    </button>
-                </th>
-                <th>Zniżka</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div>
+
+            <table
+                    id="reportTable"
+                    class="table"
+                    data-toggle="table"
+                    data-search="true"
+                    data-show-columns="true"
+                    data-show-multi-sort="true"
+                    data-sort-priority='[
+                                         {"sortName":"threshold","sortOrder":"asc"},
+                                         {"sortName":"visitsInPeriod","sortOrder":"desc"}
+                                        ]'
+            >
+                <thead>
+                <tr>
+                    <th data-field="name"             data-sortable="true">Imię i nazwisko</th>
+                    <th data-field="visitsInPeriod"   data-sortable="true">Wizyty w okresie</th>
+                    <th data-field="visitsInTotal"    data-sortable="true">Wizyty w systemie</th>
+                    <th data-field="lastVisit"        data-sortable="true">Data ostatniej</th>
+                    <th data-field="status"           data-sortable="true">Obecny status</th>
+                    <th data-field="threshold"        data-sortable="true">Wizyty do zmiany statusu</th>
+                    <th data-field="discount"         data-sortable="true">Zniżka [%]</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- renderReport should now generate <tr data-index="..."> with <td data-field="...">… -->
+                </tbody>
+            </table>
+        </div>
     </section>
 
 </div>
 
+<script>
+    $(function() {
+        // Initialize the bootstrap table with all options
+        $('#reportTable').bootstrapTable({
+            search: true,
+            showColumns: true,
+            showMultiSort: true,
+            sortPriority: [
+                { sortName: 'threshold',      sortOrder: 'asc'  },
+                { sortName: 'visitsInPeriod', sortOrder: 'desc' }
+            ],
+            data: [],         // initially empty
+            rowStyle: rowStyle
+        });
+    });
+</script>
 
 <script src="js_utils/xlsx_file_loader.js"></script>
 
