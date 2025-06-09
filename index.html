@@ -31,7 +31,11 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="startDate" class="form-label">Data – początek okresu</label>
-                <input type="date" id="startDate" class="form-control" value="2025-01-01">
+                <input type="date" id="startDate" class="form-control">
+                <div class="form-text">
+                    Określa początek okresu, dla którego będą liczone wizyty pacjentów.
+                    Ustawiana automatycznie na 1 rok wstecz od dzisiejszej daty.
+                </div>
             </div>
             <div class="col-md-3">
                 <label for="highlightThreshold" class="form-label">

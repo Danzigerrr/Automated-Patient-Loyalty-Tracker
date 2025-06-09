@@ -10,6 +10,21 @@ function daysBetween(a, b) {
     return (b - a) / (1000 * 60 * 60 * 24);
 }
 
+// Set default starting date to one year ago, with max attribute to today
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('startDate');
+    const today = new Date();
+    const lastYear = new Date();
+    lastYear.setFullYear(today.getFullYear() - 1);
+
+    // format YYYY-MM-DD
+    const fmt = d => d.toISOString().split('T')[0];
+
+    inp.value = fmt(lastYear);
+    inp.max   = fmt(today);
+});
+
+
 // --- 3. Wczytanie i parsowanie pliku XLSX ---
 document.getElementById('fileInput')
     .addEventListener('change', handleFile);
