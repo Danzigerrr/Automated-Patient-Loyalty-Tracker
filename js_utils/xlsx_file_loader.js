@@ -51,7 +51,7 @@ document.getElementById('fileInput')
 
 
 // Bootstrap Table row styling
-function rowStyle(row, index) {
+function rowStyle(row) {
         const groupClassMap = {
         'Roczni Lojalni - Grupa 1': 'group-yearly1',
         'Roczni Lojalni - Grupa 2': 'group-yearly2',
