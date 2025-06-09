@@ -49,22 +49,25 @@ function handleFile(ev) {
         const dataRows = rows.slice(1);
 
         const raw = dataRows.map(r => ({
-            imie:      r[1],
-            nazwisko:  r[2],
-            visits: r[9].split(' - ')[0].trim()
+            name:     r[1],
+            surname:  r[2],
+            datesOfVisits: r[9].split(' - ')[0].trim(),
+            totalVisitsCounter: r[9].split(' - ')[1] ? r[9].split(' - ')[1] : '-'
         }));
 
         // grupowanie i budowanie historii dat
         const grouped = {};
         raw.forEach(item => {
-            const key = `${item.imie} ${item.nazwisko}`;
+            const key = `${item.name} ${item.surname}`;
             if (!grouped[key]) {
                 grouped[key] = { ...item, dates: [] };
             }
-            if (item.visits !== '-' && item.visits !== '') {
-                // "2025-02-24 - 4"
-                const datePart = item.visits;
+            if (item.datesOfVisits !== '-' && item.datesOfVisits !== '') {
+                const datePart = item.datesOfVisits;
                 grouped[key].dates.push(new Date(datePart));
+            }
+            if (item.totalVisitsCounter !== '-' && item.totalVisitsCounter !== '') {
+                grouped[key].maxVisits = parseInt(item.totalVisitsCounter, 10) || 0;
             }
         });
 
@@ -74,10 +77,12 @@ function handleFile(ev) {
             const lastVisit = p.dates.length
                 ? new Date(Math.max(...p.dates.map(d => d.getTime())))
                 : null;
+            const visitsInTotal = p.maxVisits || 0;
             return {
-                name:            `${p.imie} ${p.nazwisko}`,
+                name:            `${p.name} ${p.surname}`,
                 visitsInPeriod,
-                lastVisit
+                lastVisit,
+                visitsInTotal
             };
         });
 
@@ -158,10 +163,10 @@ document.getElementById('sortThreshold')
         // Grab existing rows
         const rows = Array.from(tbody.querySelectorAll('tr'));
 
-        // Sort them by integer in 5th cell (zero-based index 4)
+        // Sort them by integer in 6th cell ("Do kolejnej wizyty")
         rows.sort((a, b) => {
-            const aText = a.children[4].textContent.trim();
-            const bText = b.children[4].textContent.trim();
+            const aText = a.children[5].textContent.trim();
+            const bText = b.children[5].textContent.trim();
             const aNum  = parseInt(aText, 10) || 0;
             const bNum  = parseInt(bText, 10) || 0;
             return thresholdSortAsc
@@ -273,10 +278,10 @@ function renderReport(patients) {
         if (groupCls)            tr.classList.add(groupCls);
         if (result.highlightNext) tr.classList.add('next-threshold');
         if (result.expired)       tr.classList.add('reached');
-
         tr.innerHTML = `
       <td>${p.name}</td>
       <td>${p.visitsInPeriod}</td>
+     <td>${p.visitsInTotal}</td>
       <td>${p.lastVisit ? p.lastVisit.toISOString().split('T')[0] : '—'}</td>
       <td>${result.status}</td>
       <td>${result.nextThreshold}</td>
