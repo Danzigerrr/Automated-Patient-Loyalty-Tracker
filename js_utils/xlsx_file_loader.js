@@ -171,7 +171,6 @@ function handleFile(ev) {
                 showMultiSort: true,
                 sortPriority: [
                     { sortName: 'expires',      sortOrder: 'desc'  },
-                    { sortName: 'threshold',      sortOrder: 'asc'  },
                     { sortName: 'visitsInPeriod', sortOrder: 'desc' }
                 ],
                 rowStyle:      rowStyle
@@ -309,85 +308,109 @@ function populateThresholdDropdown(patients) {
 }
 
 
-// Populate the dropdown with unique "nextStatus" values
+// Populate the dropdown with unique "Status" values
 function populateStatusDropdown(patients) {
     const menu = document.getElementById('statusMenu');
-    menu.innerHTML = '';
+    menu.innerHTML = '';  // clear old items
 
-    // 1) Add Select/Deselect all
+    // 1) Select/Deselect All buttons
     const actions = document.createElement('div');
     actions.className = 'px-2 py-1';
     actions.innerHTML = `
-    <button type="button" id="selectAll"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
-    <button type="button" id="deselectAll" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <button type="button" id="selectAllStatus"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAllStatus" class="btn btn-sm btn-link">Odznacz wszystkie</button>
     <div class="dropdown-divider"></div>
   `;
     menu.appendChild(actions);
 
-    // Wire up those buttons (keep dropdown open)
-    ['selectAll','deselectAll'].forEach(id => {
-        const cb = actions.querySelector('#' + id);
-        cb.addEventListener('click', e => {
+    actions.querySelector('#selectAllStatus')
+        .addEventListener('click', e => {
             e.stopPropagation();
-            document.querySelectorAll('.status-option').forEach(inp => {
-                inp.checked = (id === 'selectAll');
-            });
+            document.querySelectorAll('.status-option')
+                .forEach(cb => cb.checked = true);
             applyAllFilters();
         });
-    });
+    actions.querySelector('#deselectAllStatus')
+        .addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.status-option')
+                .forEach(cb => cb.checked = false);
+            applyAllFilters();
+        });
 
-    // 2) Populate each status option
-    const unique = Array.from(new Set(
-        patients.map(p => evaluateLoyalty(p).status)
-    )).sort((a,b) => (parseInt(a,10)||0) - (parseInt(b,10)||0));
+    // 2) Unique statuses from patients array
+    const uniqueStatuses = Array.from(new Set(
+        patients.map(p => p.status)
+    )).sort();
 
-    unique.forEach(val => {
-        const id = 'th-' + val.replace(/\s+/g,'_');
+    // 3) Populate checkboxes
+    uniqueStatuses.forEach(status => {
+        const id = 'st-' + status.replace(/\s+/g,'_');
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
         label.innerHTML = `
-      <input class="form-check-input status-option me-2"
-             type="checkbox"
-             value="${val}"
+      <input type="checkbox"
+             class="form-check-input status-option me-2"
              id="${id}"
+             value="${status}"
              checked>
-      ${val}
+      ${status}
     `;
-
-        // prevent dropdown from closing when clicking label or checkbox
+        // prevent dropdown from closing
         label.addEventListener('click', e => e.stopPropagation());
-        label.querySelector('input').addEventListener('click', e => e.stopPropagation());
+        label.querySelector('input')
+            .addEventListener('click', e => e.stopPropagation());
 
         menu.appendChild(label);
     });
 
-    // 3) Use the change event to trigger filtering
-    document.querySelectorAll('.status-option').forEach(inp => {
-        inp.addEventListener('change', applyAllFilters);
-    });
+    // 4) Bind filter logic
+    document.querySelectorAll('.status-option')
+        .forEach(cb => cb.addEventListener('change', applyAllFilters));
 }
+
 
 
 
 // Apply both name search + threshold dropdown filtering
 function applyAllFilters() {
-    const nameFilter = document.getElementById('patientSearch').value.toLowerCase();
+    const nameFilter = document.getElementById('patientSearch')
+        .value.toLowerCase();
 
-    // Gather all checked thresholds
-    const selected = Array.from(document.querySelectorAll('.threshold-option:checked'))
-        .map(cb => cb.value);
-    const matchAll = selected.length === 0;
+    // get selected statuses & thresholds
+    const selectedStatuses = new Set(
+        Array.from(document.querySelectorAll('.status-option:checked'))
+            .map(cb => cb.value)
+    );
+    const selectedThresholds = new Set(
+        Array.from(document.querySelectorAll('.threshold-option:checked'))
+            .map(cb => cb.value)
+    );
 
-    document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
-        const name = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
-        const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
-        const status = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Status"]].textContent.trim();
+    const filterName = nameFilter.trim() !== '';
+    const filterStatus = selectedStatuses.size > 0;
+    const filterThreshold = selectedThresholds.size > 0;
 
-        const nameOk = name.includes(nameFilter);
-        const thresholdOk = matchAll || selected.includes(threshold);
+    document.querySelectorAll('#reportTable tbody tr')
+        .forEach(tr => {
+            const name      = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Name and Surname']]
+                .textContent.toLowerCase();
+            const status    = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Status']].textContent.trim();
+            const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Threshold']].textContent.trim();
 
-        tr.style.display = (nameOk && thresholdOk) ? '' : 'none';
-    });
+            let show = true;
+            if (filterName) {
+                show = show && name.includes(nameFilter);
+            }
+            if (filterStatus) {
+                show = show && selectedStatuses.has(status);
+            }
+            if (filterThreshold) {
+                show = show && selectedThresholds.has(threshold);
+            }
+
+            tr.style.display = show ? '' : 'none';
+        });
 }
 
