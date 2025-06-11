@@ -241,47 +241,62 @@ function hideOrShowFileUploadInstruction() {
 // Populate the dropdown with unique "nextThreshold" values
 function populateThresholdDropdown(patients) {
     const menu = document.getElementById('thresholdMenu');
-    menu.innerHTML = '';  // clear old items
+    menu.innerHTML = '';
 
+    // 1) Add Select/Deselect all
+    const actions = document.createElement('div');
+    actions.className = 'px-2 py-1';
+    actions.innerHTML = `
+    <button type="button" id="selectAll"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAll" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <div class="dropdown-divider"></div>
+  `;
+    menu.appendChild(actions);
+
+    // Wire up those buttons (keep dropdown open)
+    ['selectAll','deselectAll'].forEach(id => {
+        const cb = actions.querySelector('#' + id);
+        cb.addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.threshold-option').forEach(inp => {
+                inp.checked = (id === 'selectAll');
+            });
+            applyAllFilters();
+        });
+    });
+
+    // 2) Populate each threshold option
     const unique = Array.from(new Set(
         patients.map(p => evaluateLoyalty(p).nextThreshold)
-    )).sort((a, b) =>
-        (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)
-    );
+    )).sort((a,b) => (parseInt(a,10)||0) - (parseInt(b,10)||0));
 
     unique.forEach(val => {
-        const id = 'th-' + val.replace(/\s+/g, '_');
-
-        // Create the label-as-item
+        const id = 'th-' + val.replace(/\s+/g,'_');
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
-
         label.innerHTML = `
       <input class="form-check-input threshold-option me-2"
              type="checkbox"
              value="${val}"
-             id="${id}">
+             id="${id}"
+             checked>
       ${val}
     `;
 
-        // **Prevent dropdown from closing when label clicked**
-        label.addEventListener('click', e => {
-            e.stopPropagation();
-            // Also manually toggle the checkbox
-            const cb = label.querySelector('input[type="checkbox"]');
-            cb.checked = !cb.checked;
-            applyAllFilters();
-        });
+        // prevent dropdown from closing when clicking label or checkbox
+        label.addEventListener('click', e => e.stopPropagation());
+        label.querySelector('input').addEventListener('click', e => e.stopPropagation());
 
         menu.appendChild(label);
     });
 
-    // Re-bind filter logic on checkboxes as well (if needed)
-    document.querySelectorAll('.threshold-option').forEach(cb => {
-        cb.addEventListener('change', applyAllFilters);
+    // 3) Use the change event to trigger filtering
+    document.querySelectorAll('.threshold-option').forEach(inp => {
+        inp.addEventListener('change', applyAllFilters);
     });
 }
+
 
 
 // Apply both name search + threshold dropdown filtering
