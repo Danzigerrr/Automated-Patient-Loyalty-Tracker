@@ -13,6 +13,7 @@ const SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP = {
 
 const PATIENT_REPORT_COLUMN_TO_INDEX_MAP = {
     "Name and Surname": 0,
+    "Status": 4,
     "Threshold": 5
 };
 
@@ -150,6 +151,7 @@ function handleFile(ev) {
 
 
             populateThresholdDropdown(patients);
+            populateStatusDropdown(patients);
 
             // Attach listeners once
             document.querySelectorAll('.threshold-option')
@@ -307,6 +309,66 @@ function populateThresholdDropdown(patients) {
 }
 
 
+// Populate the dropdown with unique "nextStatus" values
+function populateStatusDropdown(patients) {
+    const menu = document.getElementById('statusMenu');
+    menu.innerHTML = '';
+
+    // 1) Add Select/Deselect all
+    const actions = document.createElement('div');
+    actions.className = 'px-2 py-1';
+    actions.innerHTML = `
+    <button type="button" id="selectAll"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAll" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <div class="dropdown-divider"></div>
+  `;
+    menu.appendChild(actions);
+
+    // Wire up those buttons (keep dropdown open)
+    ['selectAll','deselectAll'].forEach(id => {
+        const cb = actions.querySelector('#' + id);
+        cb.addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.status-option').forEach(inp => {
+                inp.checked = (id === 'selectAll');
+            });
+            applyAllFilters();
+        });
+    });
+
+    // 2) Populate each status option
+    const unique = Array.from(new Set(
+        patients.map(p => evaluateLoyalty(p).status)
+    )).sort((a,b) => (parseInt(a,10)||0) - (parseInt(b,10)||0));
+
+    unique.forEach(val => {
+        const id = 'th-' + val.replace(/\s+/g,'_');
+        const label = document.createElement('label');
+        label.className = 'dropdown-item form-check mb-0';
+        label.style.cursor = 'pointer';
+        label.innerHTML = `
+      <input class="form-check-input status-option me-2"
+             type="checkbox"
+             value="${val}"
+             id="${id}"
+             checked>
+      ${val}
+    `;
+
+        // prevent dropdown from closing when clicking label or checkbox
+        label.addEventListener('click', e => e.stopPropagation());
+        label.querySelector('input').addEventListener('click', e => e.stopPropagation());
+
+        menu.appendChild(label);
+    });
+
+    // 3) Use the change event to trigger filtering
+    document.querySelectorAll('.status-option').forEach(inp => {
+        inp.addEventListener('change', applyAllFilters);
+    });
+}
+
+
 
 // Apply both name search + threshold dropdown filtering
 function applyAllFilters() {
@@ -320,6 +382,7 @@ function applyAllFilters() {
     document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
         const name = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
         const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
+        const status = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Status"]].textContent.trim();
 
         const nameOk = name.includes(nameFilter);
         const thresholdOk = matchAll || selected.includes(threshold);

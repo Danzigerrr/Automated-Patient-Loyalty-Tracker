@@ -102,7 +102,27 @@
             </div>
 
             <br>
-            <!-- Row 2: Threshold filter dropdown -->
+
+            <!-- Row 2: Status filter dropdown -->
+            <div class="input-group">
+                <button
+                        class="btn btn-outline-secondary dropdown-toggle"
+                        type="button"
+                        id="statusDropdown"
+                        data-toggle="dropdown"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        data-bs-auto-close="outside">
+                    Wybierz rodzaje statusu <span class="caret"></span>
+                </button>
+                <!-- Use a div instead of ul -->
+                <div class="dropdown-menu" aria-labelledby="statusDropdown" id="statusMenu" >
+                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+                </div>
+            </div>
+
+            <br>
+            <!-- Row 3: Threshold filter dropdown -->
             <div class="input-group">
                 <button
                         class="btn btn-outline-secondary dropdown-toggle"
@@ -119,6 +139,7 @@
                     <!-- JS will inject <a class="dropdown-item">…</a> here -->
                 </div>
             </div>
+
         </form>
 
         <br>
