@@ -116,26 +116,34 @@ function handleFile(ev) {
                 expires:        ''   // placeholder
             };
 
-            // Evaluate loyalty once
-            const result = evaluateLoyalty({
+            // 1) Evaluate loyalty
+            let result = evaluateLoyalty({
                 visitsInPeriod: row.visitsInPeriod,
+                visitsInTotal:  row.visitsInTotal,
                 lastVisit:      lastVisitDate
             });
 
-            // Compute the expiration date: lastVisit + validityDays
-            if (lastVisitDate) {
-                const expiry = new Date(lastVisitDate);
-                expiry.setDate(expiry.getDate() +
-                    // find the matching rule to get its validityDays
-                    LOYALTY_RULES.find(r => r.name === result.status)?.validityDays || 0
-                );
-                row.expires = expiry.toISOString().split('T')[0];
+            // 2) Compute the expiration date
+            let expiryDate = '----';
+            if (lastVisitDate && result.status !== 'Brak statusu') {
+                const rule = LOYALTY_RULES.find(r => r.name === result.status);
+                const e = new Date(lastVisitDate);
+                e.setDate(e.getDate() + (rule?.validityDays || 0));
+                expiryDate = e.toISOString().split('T')[0];
+
+                // 3) If expiry has passed, override status
+                if (e < new Date()) {
+                    result.status = 'Brak statusu';
+                    result.discount = 0;
+                    expiryDate = '----';
+                }
             }
 
-            // Attach the rest
+            row.expires   = expiryDate;
             row.status    = result.status;
             row.threshold = result.nextThreshold;
             row.discount  = result.discount;
+
 
             return row;
         });
@@ -160,6 +168,7 @@ function handleFile(ev) {
                 showColumns:   true,
                 showMultiSort: true,
                 sortPriority: [
+                    { sortName: 'expires',      sortOrder: 'desc'  },
                     { sortName: 'threshold',      sortOrder: 'asc'  },
                     { sortName: 'visitsInPeriod', sortOrder: 'desc' }
                 ],
