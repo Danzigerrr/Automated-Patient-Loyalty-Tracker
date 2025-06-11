@@ -33,13 +33,21 @@
     <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
     <section id="configurationSection" class="mt-5">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+        <div class="row g-4 align-items-end">
+            <div class="col-md-3">
                 <label for="startDate" class="form-label">Data – początek okresu</label>
-                <input type="date" id="startDate" class="form-control">
+                <input type="date" id="startDate" class="form-control" readonly>
                 <div class="form-text">
                     Określa początek okresu, dla którego będą liczone wizyty pacjentów.
                     Ustawiana automatycznie na 1 rok wstecz od dzisiejszej daty.
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">Data – koniec okresu</label>
+                <input type="date" id="endDate" class="form-control" readonly>
+                <div class="form-text">
+                    Określa koniec okresu, dla którego będą liczone wizyty pacjentów.
+                    Ustawiana automatycznie na dzisiejszą datę.
                 </div>
             </div>
             <div class="col-md-3">
@@ -53,10 +61,11 @@
                        data-toggle="dropdown"
                        value="3">
                 <div class="form-text">
-                    Pacjent zostanie wyróżniony, jeśli do kolejnego progu zostało ≤ tej wartości.
+                    Pacjent zostanie wyróżniony,
+                    jeśli do kolejnego progu zostało mniej lub równa liczba wizyt określona w tym polu.
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 

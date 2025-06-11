@@ -36,6 +36,18 @@ document.addEventListener('DOMContentLoaded', () => {
     inp.max   = fmt(today);
 });
 
+// Set default starting date to one year ago, with max attribute to today
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('endDate');
+    const today = new Date();
+
+    // format YYYY-MM-DD
+    const fmt = d => d.toISOString().split('T')[0];
+
+    inp.value = fmt(today);
+    inp.max   = fmt(today);
+});
+
 
 // Handle file input change event
 document.getElementById('fileInput')
