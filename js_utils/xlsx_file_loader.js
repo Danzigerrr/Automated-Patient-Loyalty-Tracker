@@ -1,37 +1,17 @@
 const LOYALTY_RULES = [
-    {
-        name:       '30+ Wizyt',
-        min:        30,
-        max:        Infinity,
-        discount:   10,
-        validityDays: 365,
-        visitField: 'visitsInTotal'     // use total‐ever count
-    },
-    {
-        name:       'Roczni Lojalni – Grupa 1',
-        min:        10,
-        max:        20,
-        discount:   5,
-        validityDays: 90,
-        visitField: 'visitsInPeriod'    // use last‐365‐days count
-    },
-    {
-        name:       'Roczni Lojalni – Grupa 2',
-        min:        20,
-        max:        30,
-        discount:   10,
-        validityDays: 180,
-        visitField: 'visitsInPeriod'    // use last‐365‐days count
-    }
+    { name: '30+ Wizyt', min: 30, max: Infinity, discount: 10, validityDays: 365, visitField: 'visitsInPeriod' },
+    { name: 'Roczni Lojalni - Grupa 1', min: 10, max: 20, discount: 5, validityDays: 90, visitField: 'visitsInPeriod' },
+    { name: 'Roczni Lojalni - Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180, visitField: 'visitsInPeriod' }
 ];
 
-const COLUMN_TO_INDEX_MAP = {
+
+const SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP = {
     "Name": 1,
     "Surname": 2,
     "Visit Info": 9
 };
 
-const HTML_COLUMN_TO_INDEX_MAP = {
+const PATIENT_REPORT_COLUMN_TO_INDEX_MAP = {
     "Name and Surname": 0,
     "Threshold": 5
 };
@@ -72,7 +52,6 @@ function rowStyle(row) {
 
     const result = evaluateLoyalty({
         visitsInPeriod: row.visitsInPeriod,
-        visitsInTotal:  row.visitsInTotal,
         lastVisit:      lastVisitDateObj(row.lastVisit)
     });
     const classes = [];
@@ -80,6 +59,7 @@ function rowStyle(row) {
     if (result.expired)       classes.push('reached');
     const groupClass = groupClassMap[result.status];
     if (groupClass)            classes.push(groupClass);
+
     return { classes: classes.join(' ') };
 }
 
@@ -104,10 +84,10 @@ function handleFile(ev) {
 
         // parse raw
         const raw = dataRows.map(r => ({
-            name:             r[COLUMN_TO_INDEX_MAP["Name"]],
-            surname:          r[COLUMN_TO_INDEX_MAP["Surname"]],
-            visitDate:        r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[0].trim(),
-            totalVisitsCount: parseInt(r[COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[1], 10) || 0
+            name:             r[SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP["Name"]],
+            surname:          r[SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP["Surname"]],
+            visitDate:        r[SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[0].trim(),
+            totalVisitsCount: parseInt(r[SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP["Visit Info"]].split(' - ')[1], 10) || 0
         }));
 
         // group by patient
@@ -121,34 +101,53 @@ function handleFile(ev) {
             grouped[key].totalVisits = item.totalVisitsCount;
         });
 
-        // build final array with all bootstrap-table fields
         const patients = Object.entries(grouped).map(([fullName, p]) => {
             const visitsInPeriod = p.dates.filter(d => d >= startDate).length;
             const lastVisitDate  = p.dates.length
-                ? new Date(Math.max(...p.dates.map(d=>d.getTime())))
+                ? new Date(Math.max(...p.dates.map(d => d.getTime())))
                 : null;
 
+            // Base row data
             const row = {
-                name:            fullName,
+                name:           fullName,
                 visitsInPeriod,
-                visitsInTotal:   p.totalVisits,
-                lastVisit:       lastVisitDate
+                lastVisit:      lastVisitDate
                     ? lastVisitDate.toISOString().split('T')[0]
                     : '',
+                expires:        ''   // placeholder
             };
 
-            // evaluate loyalty once, attach to row
-            const result = evaluateLoyalty({
+            // 1) Evaluate loyalty
+            let result = evaluateLoyalty({
                 visitsInPeriod: row.visitsInPeriod,
-                visitsInTotal:  row.visitsInTotal,
                 lastVisit:      lastVisitDate
             });
+
+            // 2) Compute the expiration date
+            let expiryDate = '----';
+            if (lastVisitDate && result.status !== 'Brak statusu') {
+                // If expiry has passed, override status
+                if (e < new Date()) {
+                    result.status = 'Brak statusu';
+                    result.discount = 0;
+                    expiryDate = '----';
+                }
+                else {
+                    const rule = LOYALTY_RULES.find(r => r.name === result.status);
+                    const e = new Date(lastVisitDate);
+                    e.setDate(e.getDate() + (rule?.validityDays || 0));
+                    expiryDate = e.toISOString().split('T')[0];
+                }
+            }
+
+            row.expires   = expiryDate;
             row.status    = result.status;
             row.threshold = result.nextThreshold;
             row.discount  = result.discount;
 
             return row;
         });
+
 
             populateThresholdDropdown(patients);
 
@@ -169,6 +168,7 @@ function handleFile(ev) {
                 showColumns:   true,
                 showMultiSort: true,
                 sortPriority: [
+                    { sortName: 'expires',      sortOrder: 'desc'  },
                     { sortName: 'threshold',      sortOrder: 'asc'  },
                     { sortName: 'visitsInPeriod', sortOrder: 'desc' }
                 ],
@@ -250,47 +250,62 @@ function hideOrShowFileUploadInstruction() {
 // Populate the dropdown with unique "nextThreshold" values
 function populateThresholdDropdown(patients) {
     const menu = document.getElementById('thresholdMenu');
-    menu.innerHTML = '';  // clear old items
+    menu.innerHTML = '';
 
+    // 1) Add Select/Deselect all
+    const actions = document.createElement('div');
+    actions.className = 'px-2 py-1';
+    actions.innerHTML = `
+    <button type="button" id="selectAll"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAll" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <div class="dropdown-divider"></div>
+  `;
+    menu.appendChild(actions);
+
+    // Wire up those buttons (keep dropdown open)
+    ['selectAll','deselectAll'].forEach(id => {
+        const cb = actions.querySelector('#' + id);
+        cb.addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.threshold-option').forEach(inp => {
+                inp.checked = (id === 'selectAll');
+            });
+            applyAllFilters();
+        });
+    });
+
+    // 2) Populate each threshold option
     const unique = Array.from(new Set(
         patients.map(p => evaluateLoyalty(p).nextThreshold)
-    )).sort((a, b) =>
-        (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0)
-    );
+    )).sort((a,b) => (parseInt(a,10)||0) - (parseInt(b,10)||0));
 
     unique.forEach(val => {
-        const id = 'th-' + val.replace(/\s+/g, '_');
-
-        // Create the label-as-item
+        const id = 'th-' + val.replace(/\s+/g,'_');
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
-
         label.innerHTML = `
       <input class="form-check-input threshold-option me-2"
              type="checkbox"
              value="${val}"
-             id="${id}">
+             id="${id}"
+             checked>
       ${val}
     `;
 
-        // **Prevent dropdown from closing when label clicked**
-        label.addEventListener('click', e => {
-            e.stopPropagation();
-            // Also manually toggle the checkbox
-            const cb = label.querySelector('input[type="checkbox"]');
-            cb.checked = !cb.checked;
-            applyAllFilters();
-        });
+        // prevent dropdown from closing when clicking label or checkbox
+        label.addEventListener('click', e => e.stopPropagation());
+        label.querySelector('input').addEventListener('click', e => e.stopPropagation());
 
         menu.appendChild(label);
     });
 
-    // Re-bind filter logic on checkboxes as well (if needed)
-    document.querySelectorAll('.threshold-option').forEach(cb => {
-        cb.addEventListener('change', applyAllFilters);
+    // 3) Use the change event to trigger filtering
+    document.querySelectorAll('.threshold-option').forEach(inp => {
+        inp.addEventListener('change', applyAllFilters);
     });
 }
+
 
 
 // Apply both name search + threshold dropdown filtering
@@ -303,8 +318,8 @@ function applyAllFilters() {
     const matchAll = selected.length === 0;
 
     document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
-        const name = tr.children[HTML_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
-        const threshold = tr.children[HTML_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
+        const name = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
+        const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
 
         const nameOk = name.includes(nameFilter);
         const thresholdOk = matchAll || selected.includes(threshold);
