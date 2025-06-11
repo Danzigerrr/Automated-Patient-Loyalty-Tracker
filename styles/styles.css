@@ -56,40 +56,6 @@ tr:hover {
     padding: 0.5rem;
 }
 
-/* Loyalty groups */
-.group-yearly1 {
-    background-color: #e3f2fd; /* light blue */
-}
-.group-yearly2 {
-    background-color: #e8f5e9; /* light green */
-}
-.group-over30 {
-    background-color: #f3e5f5; /* light purple */
-}
-.group-none {
-    background-color: #ffebee; /* very light red for “no status” */
-}
-
-
-/* Remove old table borders—Bootstrap handles it */
-#reportTable th,
-#reportTable td {
-    border: none;
-}
-
-/* stronger, td-level background overrides */
-#reportTable tbody tr.group-yearly1 td {
-    background-color: #e3f2fd !important; /* light blue */
-}
-#reportTable tbody tr.group-yearly2 td {
-    background-color: #e8f5e9 !important; /* light green */
-}
-#reportTable tbody tr.group-over30 td {
-    background-color: #f3e5f5 !important; /* light purple */
-}
-#reportTable tbody tr.group-none td {
-    background-color: #ffebee !important; /* very light red */
-}
 
 
 #reportTable tbody tr.next-threshold td {
@@ -168,7 +134,48 @@ tr:hover {
 /* Make the "Show Columns" dropdown wider */
 .bootstrap-table .columns .dropdown-menu {
     min-width: 250px !important;
-    max-width: 400px;
+    max-width: 500px;
+}
+
+
+/*!* Loyalty groups *!*/
+/*.group-yearly1 {*/
+/*    background-color: #3184c4; !* light blue *!*/
+/*}*/
+/*.group-yearly2 {*/
+/*    background-color: #62d06a; !* light green *!*/
+/*}*/
+/*.group-over30 {*/
+/*    background-color: #e658fa; !* light purple *!*/
+/*}*/
+/*.group-none {*/
+/*    background-color: #ef556c; !* very light red for “no status” *!*/
+/*}*/
+
+
+/* Remove old table borders—Bootstrap handles it */
+#reportTable th,
+#reportTable td {
+    border: none;
+}
+
+/* Softer base row colors */
+#reportTable tbody tr.group-yearly1 td {
+    background-color: #d0e7fb !important; /* very pale blue */
+}
+#reportTable tbody tr.group-yearly2 td {
+    background-color: #f9f4e3 !important; /* very pale yellow */
+}
+#reportTable tbody tr.group-over30 td {
+    background-color: #f3e5f9 !important; /* very pale purple */
+}
+#reportTable tbody tr.group-none td {
+    background-color: #fde2e1 !important; /* very pale red */
+}
+
+/* Darker on hover, across all rows */
+#reportTable tbody tr:hover td {
+    filter: brightness(0.92) !important;
 }
 
 

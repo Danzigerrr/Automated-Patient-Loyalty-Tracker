@@ -1,7 +1,7 @@
 const LOYALTY_RULES = [
     { name: '30+ Wizyt', min: 30, max: Infinity, discount: 10, validityDays: 365, visitField: 'visitsInPeriod' },
-    { name: 'Roczni Lojalni – Grupa 1', min: 10, max: 19, discount: 5, validityDays: 90, visitField: 'visitsInPeriod' },
-    { name: 'Roczni Lojalni – Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180, visitField: 'visitsInPeriod' }
+    { name: 'Roczni Lojalni - Grupa 1', min: 10, max: 20, discount: 5, validityDays: 90, visitField: 'visitsInPeriod' },
+    { name: 'Roczni Lojalni - Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180, visitField: 'visitsInPeriod' }
 ];
 
 
@@ -59,6 +59,7 @@ function rowStyle(row) {
     if (result.expired)       classes.push('reached');
     const groupClass = groupClassMap[result.status];
     if (groupClass)            classes.push(groupClass);
+
     return { classes: classes.join(' ') };
 }
 
@@ -119,23 +120,23 @@ function handleFile(ev) {
             // 1) Evaluate loyalty
             let result = evaluateLoyalty({
                 visitsInPeriod: row.visitsInPeriod,
-                visitsInTotal:  row.visitsInTotal,
                 lastVisit:      lastVisitDate
             });
 
             // 2) Compute the expiration date
             let expiryDate = '----';
             if (lastVisitDate && result.status !== 'Brak statusu') {
-                const rule = LOYALTY_RULES.find(r => r.name === result.status);
-                const e = new Date(lastVisitDate);
-                e.setDate(e.getDate() + (rule?.validityDays || 0));
-                expiryDate = e.toISOString().split('T')[0];
-
-                // 3) If expiry has passed, override status
+                // If expiry has passed, override status
                 if (e < new Date()) {
                     result.status = 'Brak statusu';
                     result.discount = 0;
                     expiryDate = '----';
+                }
+                else {
+                    const rule = LOYALTY_RULES.find(r => r.name === result.status);
+                    const e = new Date(lastVisitDate);
+                    e.setDate(e.getDate() + (rule?.validityDays || 0));
+                    expiryDate = e.toISOString().split('T')[0];
                 }
             }
 
@@ -143,7 +144,6 @@ function handleFile(ev) {
             row.status    = result.status;
             row.threshold = result.nextThreshold;
             row.discount  = result.discount;
-
 
             return row;
         });
