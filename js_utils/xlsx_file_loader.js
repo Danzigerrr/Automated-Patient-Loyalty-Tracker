@@ -13,6 +13,7 @@ const SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP = {
 
 const PATIENT_REPORT_COLUMN_TO_INDEX_MAP = {
     "Name and Surname": 0,
+    "Status": 4,
     "Threshold": 5
 };
 
@@ -32,6 +33,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const fmt = d => d.toISOString().split('T')[0];
 
     inp.value = fmt(lastYear);
+    inp.max   = fmt(today);
+});
+
+// Set default starting date to one year ago, with max attribute to today
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('endDate');
+    const today = new Date();
+
+    // format YYYY-MM-DD
+    const fmt = d => d.toISOString().split('T')[0];
+
+    inp.value = fmt(today);
     inp.max   = fmt(today);
 });
 
@@ -150,6 +163,7 @@ function handleFile(ev) {
 
 
             populateThresholdDropdown(patients);
+            populateStatusDropdown(patients);
 
             // Attach listeners once
             document.querySelectorAll('.threshold-option')
@@ -169,7 +183,6 @@ function handleFile(ev) {
                 showMultiSort: true,
                 sortPriority: [
                     { sortName: 'expires',      sortOrder: 'desc'  },
-                    { sortName: 'threshold',      sortOrder: 'asc'  },
                     { sortName: 'visitsInPeriod', sortOrder: 'desc' }
                 ],
                 rowStyle:      rowStyle
@@ -307,24 +320,109 @@ function populateThresholdDropdown(patients) {
 }
 
 
+// Populate the dropdown with unique "Status" values
+function populateStatusDropdown(patients) {
+    const menu = document.getElementById('statusMenu');
+    menu.innerHTML = '';  // clear old items
+
+    // 1) Select/Deselect All buttons
+    const actions = document.createElement('div');
+    actions.className = 'px-2 py-1';
+    actions.innerHTML = `
+    <button type="button" id="selectAllStatus"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAllStatus" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <div class="dropdown-divider"></div>
+  `;
+    menu.appendChild(actions);
+
+    actions.querySelector('#selectAllStatus')
+        .addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.status-option')
+                .forEach(cb => cb.checked = true);
+            applyAllFilters();
+        });
+    actions.querySelector('#deselectAllStatus')
+        .addEventListener('click', e => {
+            e.stopPropagation();
+            document.querySelectorAll('.status-option')
+                .forEach(cb => cb.checked = false);
+            applyAllFilters();
+        });
+
+    // 2) Unique statuses from patients array
+    const uniqueStatuses = Array.from(new Set(
+        patients.map(p => p.status)
+    )).sort();
+
+    // 3) Populate checkboxes
+    uniqueStatuses.forEach(status => {
+        const id = 'st-' + status.replace(/\s+/g,'_');
+        const label = document.createElement('label');
+        label.className = 'dropdown-item form-check mb-0';
+        label.style.cursor = 'pointer';
+        label.innerHTML = `
+      <input type="checkbox"
+             class="form-check-input status-option me-2"
+             id="${id}"
+             value="${status}"
+             checked>
+      ${status}
+    `;
+        // prevent dropdown from closing
+        label.addEventListener('click', e => e.stopPropagation());
+        label.querySelector('input')
+            .addEventListener('click', e => e.stopPropagation());
+
+        menu.appendChild(label);
+    });
+
+    // 4) Bind filter logic
+    document.querySelectorAll('.status-option')
+        .forEach(cb => cb.addEventListener('change', applyAllFilters));
+}
+
+
+
 
 // Apply both name search + threshold dropdown filtering
 function applyAllFilters() {
-    const nameFilter = document.getElementById('patientSearch').value.toLowerCase();
+    const nameFilter = document.getElementById('patientSearch')
+        .value.toLowerCase();
 
-    // Gather all checked thresholds
-    const selected = Array.from(document.querySelectorAll('.threshold-option:checked'))
-        .map(cb => cb.value);
-    const matchAll = selected.length === 0;
+    // get selected statuses & thresholds
+    const selectedStatuses = new Set(
+        Array.from(document.querySelectorAll('.status-option:checked'))
+            .map(cb => cb.value)
+    );
+    const selectedThresholds = new Set(
+        Array.from(document.querySelectorAll('.threshold-option:checked'))
+            .map(cb => cb.value)
+    );
 
-    document.querySelectorAll('#reportTable tbody tr').forEach(tr => {
-        const name = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Name and Surname"]].textContent.toLowerCase();
-        const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP["Threshold"]].textContent.trim();
+    const filterName = nameFilter.trim() !== '';
+    const filterStatus = selectedStatuses.size > 0;
+    const filterThreshold = selectedThresholds.size > 0;
 
-        const nameOk = name.includes(nameFilter);
-        const thresholdOk = matchAll || selected.includes(threshold);
+    document.querySelectorAll('#reportTable tbody tr')
+        .forEach(tr => {
+            const name      = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Name and Surname']]
+                .textContent.toLowerCase();
+            const status    = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Status']].textContent.trim();
+            const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Threshold']].textContent.trim();
 
-        tr.style.display = (nameOk && thresholdOk) ? '' : 'none';
-    });
+            let show = true;
+            if (filterName) {
+                show = show && name.includes(nameFilter);
+            }
+            if (filterStatus) {
+                show = show && selectedStatuses.has(status);
+            }
+            if (filterThreshold) {
+                show = show && selectedThresholds.has(threshold);
+            }
+
+            tr.style.display = show ? '' : 'none';
+        });
 }
 
