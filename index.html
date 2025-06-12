@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <title>FizjoActive - System Lojalnościowy</title>
 
-
     <meta http-equiv="Content-Security-Policy"
           content="
         default-src 'self';
@@ -14,7 +13,6 @@
         font-src 'self' https://maxcdn.bootstrapcdn.com;
         img-src 'self' data: https://unpkg.com https://cdn.jsdelivr.net https://maxcdn.bootstrapcdn.com https://code.jquery.com 'unsafe-inline';
       ">
-
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -178,7 +176,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                <!-- renderReport should now generate <tr data-index="..."> with <td data-field="...">… -->
+                    <!-- Table rows will be injected here by JavaScript -->
                 </tbody>
             </table>
         </div>
@@ -186,8 +184,13 @@
 
 </div>
 
-<script src="js_utils/xlsx_file_loader.js"></script>
 
+<!-- Your Application JavaScript Files (order is crucial due to dependencies) -->
+<script src="js/config.js"></script>         <!-- Constants first -->
+<script src="js/utils.js"></script>          <!-- Utilities next -->
+<script src="js/loyalty-engine.js"></script> <!-- Loyalty logic, depends on config and utils -->
+<script src="js/table-filters.js"></script>  <!-- Filters, depends on global table instance and loyalty-engine for unique values -->
+<script src="js/main.js"></script>           <!-- Main application logic, depends on all above -->
 
 </body>
 </html>
