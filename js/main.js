@@ -27,11 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('fileInput')
     .addEventListener('change', handleFile);
 
-// Toggle visibility of the file upload instruction
-// Changed to explicit event listener for better practice, replacing inline onclick
-document.querySelector('button[onclick="hideOrShowFileUploadInstruction()"]')
-    .addEventListener('click', hideOrShowFileUploadInstruction);
-
 // Handles file input and processes the Excel data
 function handleFile(ev) {
     const file = ev.target.files[0];
@@ -135,7 +130,8 @@ function handleFile(ev) {
                 showColumns: true,
                 showMultiSort: true,
                 sortPriority: [
-                    { sortName: 'expires', sortOrder: 'desc' }
+                    { sortName: 'expires', sortOrder: 'desc' },
+                    { sortName: 'threshold', sortOrder: 'asc' },
                 ],
                 rowStyle: rowStyle,
                 dataFilterControl: true
