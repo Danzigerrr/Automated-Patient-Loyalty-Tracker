@@ -211,23 +211,29 @@ tr:hover {
     border: none;
 }
 
-/* Softer base row colors */
+/* Soft base row colors */
 #reportTable tbody tr.group-yearly1 td {
-    background-color: #d0e7fb !important; /* very pale blue */
+    background-color: #d0e7fb; /* very pale blue */
 }
 #reportTable tbody tr.group-yearly2 td {
-    background-color: #f9f4e3 !important; /* very pale yellow */
+    background-color: #f9f4e3; /* very pale yellow */
 }
 #reportTable tbody tr.group-over30 td {
-    background-color: #f3e5f9 !important; /* very pale purple */
+    background-color: #f3e5f9; /* very pale purple */
 }
 #reportTable tbody tr.group-none td {
-    background-color: #fde2e1 !important; /* very pale red */
+    background-color: #fde2e1; /* very pale red */
 }
 
 /* Darker on hover, across all rows */
 #reportTable tbody tr:hover td {
     filter: brightness(0.92) !important;
+}
+
+#reportTable tbody tr.expiresTodayStyle {
+    color: #ff6969; !important;   /* light yellow */
+    border: 2px solid #ff6969; /* orange accent */
+    font-weight: bolder;
 }
 
 
