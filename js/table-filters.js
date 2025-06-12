@@ -1,5 +1,6 @@
 // Applies all active filters to the Bootstrap Table and reapplies sorting.
 
+
 // Apply filtering
 function applyAllFilters() {
     const nameFilter = document.getElementById('patientSearch').value.toLowerCase().trim();
@@ -11,6 +12,10 @@ function applyAllFilters() {
     // Get selected thresholds
     const selectedThresholds = Array.from(document.querySelectorAll('.threshold-option:checked'))
         .map(cb => cb.value);
+
+    // Get state of the new quick filter checkboxes
+    const isExpiringChecked = document.getElementById('statusExpiringButton').checked;
+    const isUpgradingChecked = document.getElementById('statusUpgradingButton').checked;
 
     // Prepare the filters object for filterBy
     const filters = {};
@@ -36,6 +41,14 @@ function applyAllFilters() {
         // If no threshold is selected (Deselect All), explicitly set an empty array
         // This will be handled by the filterAlgorithm to return false for all rows
         filters.threshold = [];
+    }
+
+    // Add new quick filter states to the filters object
+    if (isExpiringChecked) {
+        filters.isExpiring = true;
+    }
+    if (isUpgradingChecked) {
+        filters.isUpgrading = true;
     }
 
 
@@ -83,6 +96,33 @@ function applyAllFilters() {
                 // This case should not typically happen with checkboxes, but for robustness
                 match = match && (rowThreshold === filters.threshold);
             }
+        }
+        // --- Quick Filter Logic ---
+        const today = new Date(); // Current date for expiration calculations
+
+        // "Status do wygaśnięcia" filter
+        if (filters.isExpiring) {
+            const currentStatus = row.status;
+            const expiryDateStr = row.expires;
+            const expiryDate = expiryDateStr !== '----' ? new Date(expiryDateStr) : null;
+
+            let rowIsExpiring = false;
+            if (currentStatus !== 'Brak statusu' && expiryDate) {
+                const timeDiff = expiryDate.getTime() - today.getTime();
+                const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)); // Round up to include today
+                rowIsExpiring = daysLeft >= 0 && daysLeft <= 7; // Expires today or in next 7 days
+            }
+            match = match && rowIsExpiring;
+        }
+
+        // "Status do ulepszenia" filter
+        if (filters.isUpgrading) {
+            const rowThreshold = parseInt(row.threshold, 10);
+            let rowIsUpgrading = false;
+            if (!isNaN(rowThreshold)) {
+                rowIsUpgrading = rowThreshold >= 1 && rowThreshold <= 3;
+            }
+            match = match && rowIsUpgrading;
         }
 
         return match; // Return true if the row should be shown, false otherwise

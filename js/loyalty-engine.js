@@ -68,5 +68,10 @@ function rowStyle(row) {
     const groupClass = groupClassMap[result.status];
     if (groupClass)            classes.push(groupClass);
 
+    const todayISO = new Date().toISOString().split('T')[0];
+    if (row.expires === todayISO) {
+        classes.push('expiresTodayStyle');
+    }
+
     return { classes: classes.join(' ') };
 }

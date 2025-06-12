@@ -90,10 +90,10 @@
     </section>
 
 
-    <section id="reportSection" class="mt-5" style="display:none;">
+    <section id="reportSection" class="mt-5">
         <h3 class="mb-3">Raport Pacjentów</h3>
 
-        <form class="vstack gap-3 mb-4">
+        <form>
             <!-- Row 1: Search by patient name -->
             <div class="input-group">
                 <span class="input-group-text" id="search-addon">🔍 Szukaj pacjenta…
@@ -150,6 +150,21 @@
                 </div>
             </div>
 
+            <!-- Status Quick Filter Buttons -->
+            <br>
+             <label class="btn btn-warning">
+                <input type="checkbox" id="statusExpiringButton">
+                ⏳ Pacjenci, którym status wygasa w ciągu 7 dni
+            </label>
+
+            <br>
+            <br>
+
+            <label class="btn btn-success">
+                <input type="checkbox" id="statusUpgradingButton">
+                ✨ Pacjenci, którym status wzrośnie w ciągu 3 wizyt
+            </label>
+
         </form>
 
         <br>
@@ -167,11 +182,11 @@
                 <thead>
                     <tr>
                         <th data-field="name"           data-sortable="true">Imię i nazwisko</th>
-                        <th data-field="visitsInPeriod" data-sortable="true">Wizyty w okresie</th>
+                        <th data-field="visitsInPeriod" data-sortable="true">Wizyty</th>
                         <th data-field="lastVisit"      data-sortable="true">Data ostatniej wizyty</th>
-                        <th data-field="expires"        data-sortable="true">Wygaśnięcie statusu</th>
+                        <th data-field="expires"        data-sortable="true">Utrata statusu</th>
                         <th data-field="status"         data-sortable="true">Obecny status</th>
-                        <th data-field="threshold"      data-sortable="true">Wizyty do zmiany statusu</th>
+                        <th data-field="threshold"      data-sortable="true">Wizyt do zmiany statusu</th>
                         <th data-field="discount"       data-sortable="true">Zniżka [%]</th>
                     </tr>
                 </thead>

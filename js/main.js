@@ -120,6 +120,10 @@ function handleFile(ev) {
         document.getElementById('patientSearch')
             .addEventListener('keyup', applyAllFilters);
 
+        // Add event listeners for the new quick filter checkboxes
+        document.getElementById('statusExpiringButton').addEventListener('change', applyAllFilters);
+        document.getElementById('statusUpgradingButton').addEventListener('change', applyAllFilters);
+
         document.getElementById('reportSection').style.display = 'block';
 
         // re-init table with precomputed data
