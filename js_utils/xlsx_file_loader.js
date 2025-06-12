@@ -182,8 +182,7 @@ function handleFile(ev) {
                 showColumns:   true,
                 showMultiSort: true,
                 sortPriority: [
-                    { sortName: 'expires',      sortOrder: 'desc'  },
-                    { sortName: 'visitsInPeriod', sortOrder: 'desc' }
+                    { sortName: 'expires',      sortOrder: 'desc'  }
                 ],
                 rowStyle:      rowStyle
             })
@@ -277,12 +276,22 @@ function populateThresholdDropdown(patients) {
 
     // Wire up those buttons (keep dropdown open)
     ['selectAll','deselectAll'].forEach(id => {
-        const cb = actions.querySelector('#' + id);
-        cb.addEventListener('click', e => {
+        const btn = actions.querySelector('#' + id);
+        btn.addEventListener('click', e => {
             e.stopPropagation();
+            const shouldCheck = (id === 'selectAll');
+
             document.querySelectorAll('.threshold-option').forEach(inp => {
-                inp.checked = (id === 'selectAll');
+                // only if the checked state actually changes
+                if (inp.checked !== shouldCheck) {
+                    inp.checked = shouldCheck;
+                    // fire its change handler so it updates the table row by row
+                    inp.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             });
+
+            // if for some reason your change handlers don't refresh everything,
+            // you can still call it once here:
             applyAllFilters();
         });
     });
@@ -385,44 +394,91 @@ function populateStatusDropdown(patients) {
 
 
 
-// Apply both name search + threshold dropdown filtering
+// Apply filtering
 function applyAllFilters() {
-    const nameFilter = document.getElementById('patientSearch')
-        .value.toLowerCase();
+    // Get a reference to your table instance
+    const $reportTable = $('#reportTable');
 
-    // get selected statuses & thresholds
-    const selectedStatuses = new Set(
-        Array.from(document.querySelectorAll('.status-option:checked'))
-            .map(cb => cb.value)
-    );
-    const selectedThresholds = new Set(
-        Array.from(document.querySelectorAll('.threshold-option:checked'))
-            .map(cb => cb.value)
-    );
 
-    const filterName = nameFilter.trim() !== '';
-    const filterStatus = selectedStatuses.size > 0;
-    const filterThreshold = selectedThresholds.size > 0;
+    const nameFilter = document.getElementById('patientSearch').value.toLowerCase().trim();
 
-    document.querySelectorAll('#reportTable tbody tr')
-        .forEach(tr => {
-            const name      = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Name and Surname']]
-                .textContent.toLowerCase();
-            const status    = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Status']].textContent.trim();
-            const threshold = tr.children[PATIENT_REPORT_COLUMN_TO_INDEX_MAP['Threshold']].textContent.trim();
+    // Get selected statuses
+    const selectedStatuses = Array.from(document.querySelectorAll('.status-option:checked'))
+        .map(cb => cb.value);
 
-            let show = true;
-            if (filterName) {
-                show = show && name.includes(nameFilter);
-            }
-            if (filterStatus) {
-                show = show && selectedStatuses.has(status);
-            }
-            if (filterThreshold) {
-                show = show && selectedThresholds.has(threshold);
-            }
+    // Get selected thresholds
+    const selectedThresholds = Array.from(document.querySelectorAll('.threshold-option:checked'))
+        .map(cb => cb.value);
 
-            tr.style.display = show ? '' : 'none';
+    // Prepare the filters object for filterBy
+    const filters = {};
+
+    // Add name filter if present
+    if (nameFilter !== '') {
+        // For text search, we'll use a custom filterAlgorithm
+        filters.name = nameFilter; // Assuming 'name' is the data-field for "Name and Surname"
+    }
+
+    // Add status filter if selections exist
+    if (selectedStatuses.length > 0) {
+        filters.status = selectedStatuses; // Assuming 'status' is the data-field for "Status"
+    }
+
+    // Add threshold filter if selections exist
+    if (selectedThresholds.length > 0) {
+        filters.threshold = selectedThresholds; // Assuming 'threshold' is the data-field for "Threshold"
+    }
+
+    // Define a custom filter algorithm for the 'name' field to handle 'includes'
+    const filterAlgorithm = (row, filters) => {
+        let match = true;
+
+        // Check for name filter (case-insensitive includes)
+        if (filters.name) {
+            const rowName = row.name ? String(row.name).toLowerCase() : '';
+            match = match && rowName.includes(filters.name);
+        }
+
+        // Check for status filter (multi-select 'OR' logic)
+        if (filters.status && filters.status.length > 0) {
+            const rowStatus = row.status ? String(row.status) : '';
+            match = match && filters.status.includes(rowStatus);
+        }
+
+        // Check for threshold filter (multi-select 'OR' logic)
+        if (filters.threshold && filters.threshold.length > 0) {
+            const rowThreshold = row.threshold ? String(row.threshold) : '';
+            match = match && filters.threshold.includes(rowThreshold);
+        }
+
+        return match;
+    };
+
+    // Apply filters using Bootstrap Table's filterBy method
+    $reportTable.bootstrapTable('filterBy', filters, {
+        filterAlgorithm: filterAlgorithm
+    });
+
+    // Apply filters using Bootstrap Table's filterBy method
+    $reportTable.bootstrapTable('filterBy', filters, {
+        filterAlgorithm: filterAlgorithm
+    });
+
+    // === ADDITION TO REAPPLY SORTING ===
+    // Get the current sort state
+    const currentOptions = $reportTable.bootstrapTable('getOptions');
+    const sortOrder = currentOptions.sortOrder;
+    const sortName = currentOptions.sortName;
+
+    // Check if a single column is currently sorted (either by user click or initial single sort)
+    if (sortName) {
+        $reportTable.bootstrapTable('sort', {
+            field: sortName,
+            order: sortOrder
         });
+    } else if (currentOptions.sortPriority && currentOptions.sortPriority.length > 0) {
+        // If no single column sort is active, but a multi-sort priority is defined, reapply it.
+        // This requires the 'multiple-sort' extension.
+        $reportTable.bootstrapTable('multiSort', currentOptions.sortPriority);
+    }
 }
-
