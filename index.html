@@ -90,10 +90,10 @@
     </section>
 
 
-    <section id="reportSection" class="mt-5" style="display:none;">
+    <section id="reportSection" class="mt-5">
         <h3 class="mb-3">Raport Pacjentów</h3>
 
-        <form class="vstack gap-3 mb-4">
+        <form>
             <!-- Row 1: Search by patient name -->
             <div class="input-group">
                 <span class="input-group-text" id="search-addon">🔍 Szukaj pacjenta…
@@ -149,6 +149,20 @@
                     <!-- JS will inject <a class="dropdown-item">…</a> here -->
                 </div>
             </div>
+
+            <!-- Status Quick Filter Buttons -->
+            <br>
+            <label class="btn btn-secondary bg-light border border-secondary mb-2">
+                <input type="checkbox" id="statusExpiringButton">
+                ⏳ Pacjenci, którym status wygasa w ciągu 7 dni
+            </label>
+
+            <br>
+            <br>
+            <label class="btn btn-secondary">
+                <input type="checkbox" id="statusUpgradingButton">
+                ✨ Pacjenci, którym status wzrośnie w ciągu 3 wizyt
+            </label>
 
         </form>
 
