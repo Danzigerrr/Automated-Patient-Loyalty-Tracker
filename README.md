@@ -41,7 +41,7 @@ The FizjoActive Loyalty System helps you:
 - **Flexible Filtering**:
     - **Patient Search**: Quickly find patients by name and surname using an input field.
     - **Multi-Select Status Filter**: Filter patients by their _"Obecny status"_ using a custom dropdown with **"Select All"** and **"Deselect All"** options.
-    - **Multi-Select Threshold Filter**: Filter patients by _"Wizyty do zmiany statusu"_ similarly using a custom dropdown.
+    - **Multi-Select Threshold Filter**: Filter patients by _"Wizyt do zmiany statusu"_ similarly using a custom dropdown.
 
 - **Persistent Sorting**  
   The table intelligently remembers and reapplies your chosen sorting preferences even after filtering.
