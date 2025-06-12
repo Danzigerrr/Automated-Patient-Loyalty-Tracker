@@ -4,7 +4,6 @@ const LOYALTY_RULES = [
     { name: 'Roczni Lojalni - Grupa 2', min: 20, max: 30, discount: 10, validityDays: 180, visitField: 'visitsInPeriod' }
 ];
 
-
 const SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP = {
     "Name": 1,
     "Surname": 2,
@@ -16,6 +15,9 @@ const PATIENT_REPORT_COLUMN_TO_INDEX_MAP = {
     "Status": 4,
     "Threshold": 5
 };
+
+// Get a reference to your table instance (initialize it here for global access)
+const $reportTable = $('#reportTable');
 
 // Helper function to calculate days between two dates
 function daysBetween(a, b) {
@@ -29,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastYear = new Date();
     lastYear.setFullYear(today.getFullYear() - 1);
 
-    // format YYYY-MM-DD
+    // format
     const fmt = d => d.toISOString().split('T')[0];
 
     inp.value = fmt(lastYear);
@@ -41,27 +43,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('endDate');
     const today = new Date();
 
-    // format YYYY-MM-DD
+    // format
     const fmt = d => d.toISOString().split('T')[0];
 
     inp.value = fmt(today);
     inp.max   = fmt(today);
 });
 
-
 // Handle file input change event
 document.getElementById('fileInput')
     .addEventListener('change', handleFile);
 
-
-// Bootstrap Table row styling
+// Bootstrap Table row styling function
 function rowStyle(row) {
-        const groupClassMap = {
+    const groupClassMap = {
         'Roczni Lojalni - Grupa 1': 'group-yearly1',
         'Roczni Lojalni - Grupa 2': 'group-yearly2',
         '30+ Wizyt':               'group-over30',
         'Brak statusu':            'group-none'
-        };
+    };
 
     const result = evaluateLoyalty({
         visitsInPeriod: row.visitsInPeriod,
@@ -139,16 +139,16 @@ function handleFile(ev) {
             // 2) Compute the expiration date
             let expiryDate = '----';
             if (lastVisitDate && result.status !== 'Brak statusu') {
+                const rule = LOYALTY_RULES.find(r => r.name === result.status);
+                const e = new Date(lastVisitDate);
+                e.setDate(e.getDate() + (rule?.validityDays || 0));
+
                 // If expiry has passed, override status
-                if (e < new Date()) {
+                if (e < new Date()) { // Compare against current date
                     result.status = 'Brak statusu';
                     result.discount = 0;
                     expiryDate = '----';
-                }
-                else {
-                    const rule = LOYALTY_RULES.find(r => r.name === result.status);
-                    const e = new Date(lastVisitDate);
-                    e.setDate(e.getDate() + (rule?.validityDays || 0));
+                } else {
                     expiryDate = e.toISOString().split('T')[0];
                 }
             }
@@ -161,42 +161,44 @@ function handleFile(ev) {
             return row;
         });
 
+        // Populate threshold and status dropdowns AFTER patients data is ready
+        populateThresholdDropdown(patients);
+        populateStatusDropdown(patients); // Now this will populate your custom status filter
 
-            populateThresholdDropdown(patients);
-            populateStatusDropdown(patients);
+        // Attach event listeners for filtering
+        document.getElementById('patientSearch')
+            .addEventListener('keyup', applyAllFilters);
 
-            // Attach listeners once
-            document.querySelectorAll('.threshold-option')
-                .forEach(cb => cb.addEventListener('change', applyAllFilters));
-            document.getElementById('patientSearch')
-                .addEventListener('keyup', applyAllFilters);
+        // All .threshold-option and .status-option checkboxes get their
+        // change listeners in populateThresholdDropdown and populateStatusDropdown.
 
-
-            document.getElementById('reportSection').style.display = 'block';
+        document.getElementById('reportSection').style.display = 'block';
 
         // re-init table with precomputed data
-        $('#reportTable')
+        $reportTable
             .bootstrapTable('destroy')
             .bootstrapTable({
                 data:          patients,
                 showColumns:   true,
                 showMultiSort: true,
                 sortPriority: [
-                    { sortName: 'expires',      sortOrder: 'desc'  }
+                    { sortName: 'expires',      sortOrder: 'desc'  } // Initial sort priority
                 ],
-                rowStyle:      rowStyle
-            })
-        ;
+                rowStyle:      rowStyle,
+                // data-filter-control="true" is important for filter-control-container to work
+                dataFilterControl: true // Set this option in JS for the table
+            });
+
+        // After initial table load/data set, apply initial filters if any, and then sort
+        applyAllFilters();
     };
     reader.readAsArrayBuffer(file);
 }
-
 
 // util to convert lastVisit string back to Date
 function lastVisitDateObj(str) {
     return str ? new Date(str) : null;
 }
-
 
 // Evaluate loyalty status based on the rules defined above
 function evaluateLoyalty(p) {
@@ -222,7 +224,7 @@ function evaluateLoyalty(p) {
             // expiration always based on lastVisit date
             const expired = p.lastVisit
                 ? daysBetween(p.lastVisit, now) > rule.validityDays
-                : true;
+                : true; // Consider expired if no last visit but rule requires it
 
             return {
                 status:        rule.name,
@@ -235,7 +237,7 @@ function evaluateLoyalty(p) {
     }
 
     // no rule matched → “Brak statusu”
-    const first = LOYALTY_RULES[0];
+    const first = LOYALTY_RULES[0]; // Assuming there's always at least one rule
     const baseCount = p[first.visitField] || 0;
     const toFirst   = first.min - baseCount;
     return {
@@ -257,52 +259,44 @@ function hideOrShowFileUploadInstruction() {
     }
 }
 
-
-
 // Populate the dropdown with unique "nextThreshold" values
 function populateThresholdDropdown(patients) {
     const menu = document.getElementById('thresholdMenu');
     menu.innerHTML = '';
 
-    // 1) Add Select/Deselect all
+    // 1) Add Select/Deselect all buttons for Threshold filter
     const actions = document.createElement('div');
     actions.className = 'px-2 py-1';
     actions.innerHTML = `
-    <button type="button" id="selectAll"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
-    <button type="button" id="deselectAll" class="btn btn-sm btn-link">Odznacz wszystkie</button>
+    <button type="button" id="selectAllThreshold"   class="btn btn-sm btn-link">Zaznacz wszystkie</button>
+    <button type="button" id="deselectAllThreshold" class="btn btn-sm btn-link">Odznacz wszystkie</button>
     <div class="dropdown-divider"></div>
   `;
     menu.appendChild(actions);
 
     // Wire up those buttons (keep dropdown open)
-    ['selectAll','deselectAll'].forEach(id => {
+    ['selectAllThreshold','deselectAllThreshold'].forEach(id => {
         const btn = actions.querySelector('#' + id);
         btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const shouldCheck = (id === 'selectAll');
+            e.stopPropagation(); // Keep dropdown open
+            const shouldCheck = (id === 'selectAllThreshold');
 
             document.querySelectorAll('.threshold-option').forEach(inp => {
-                // only if the checked state actually changes
                 if (inp.checked !== shouldCheck) {
                     inp.checked = shouldCheck;
-                    // fire its change handler so it updates the table row by row
-                    inp.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
-
-            // if for some reason your change handlers don't refresh everything,
-            // you can still call it once here:
-            applyAllFilters();
+            applyAllFilters(); // Apply filters once after all checkboxes are updated
         });
     });
 
     // 2) Populate each threshold option
     const unique = Array.from(new Set(
-        patients.map(p => evaluateLoyalty(p).nextThreshold)
+        patients.map(p => p.threshold) // Use p.threshold directly as it's already computed
     )).sort((a,b) => (parseInt(a,10)||0) - (parseInt(b,10)||0));
 
     unique.forEach(val => {
-        const id = 'th-' + val.replace(/\s+/g,'_');
+        const id = 'th-' + String(val).replace(/\s+/g,'_'); // Ensure val is string for replace
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
@@ -327,7 +321,6 @@ function populateThresholdDropdown(patients) {
         inp.addEventListener('change', applyAllFilters);
     });
 }
-
 
 // Populate the dropdown with unique "Status" values
 function populateStatusDropdown(patients) {
@@ -366,7 +359,7 @@ function populateStatusDropdown(patients) {
 
     // 3) Populate checkboxes
     uniqueStatuses.forEach(status => {
-        const id = 'st-' + status.replace(/\s+/g,'_');
+        const id = 'st-' + String(status).replace(/\s+/g,'_');
         const label = document.createElement('label');
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
@@ -391,18 +384,11 @@ function populateStatusDropdown(patients) {
         .forEach(cb => cb.addEventListener('change', applyAllFilters));
 }
 
-
-
-
 // Apply filtering
 function applyAllFilters() {
-    // Get a reference to your table instance
-    const $reportTable = $('#reportTable');
-
-
     const nameFilter = document.getElementById('patientSearch').value.toLowerCase().trim();
 
-    // Get selected statuses
+    // Get selected statuses from the custom checkboxes
     const selectedStatuses = Array.from(document.querySelectorAll('.status-option:checked'))
         .map(cb => cb.value);
 
@@ -415,23 +401,32 @@ function applyAllFilters() {
 
     // Add name filter if present
     if (nameFilter !== '') {
-        // For text search, we'll use a custom filterAlgorithm
-        filters.name = nameFilter; // Assuming 'name' is the data-field for "Name and Surname"
+        filters.name = nameFilter;
     }
 
-    // Add status filter if selections exist
+    // Add status filter if selections exist, OR if empty, make it so no rows match
     if (selectedStatuses.length > 0) {
-        filters.status = selectedStatuses; // Assuming 'status' is the data-field for "Status"
+        filters.status = selectedStatuses;
+    } else {
+        // If no status is selected (Deselect All), explicitly set an empty array
+        // This will be handled by the filterAlgorithm to return false for all rows
+        filters.status = [];
     }
 
-    // Add threshold filter if selections exist
+
+    // Add threshold filter if selections exist, OR if empty, make it so no rows match
     if (selectedThresholds.length > 0) {
-        filters.threshold = selectedThresholds; // Assuming 'threshold' is the data-field for "Threshold"
+        filters.threshold = selectedThresholds;
+    } else {
+        // If no threshold is selected (Deselect All), explicitly set an empty array
+        // This will be handled by the filterAlgorithm to return false for all rows
+        filters.threshold = [];
     }
 
-    // Define a custom filter algorithm for the 'name' field to handle 'includes'
+
+    // Define a custom filter algorithm to combine all filter types (AND logic between types)
     const filterAlgorithm = (row, filters) => {
-        let match = true;
+        let match = true; // Assume row matches initially
 
         // Check for name filter (case-insensitive includes)
         if (filters.name) {
@@ -440,18 +435,42 @@ function applyAllFilters() {
         }
 
         // Check for status filter (multi-select 'OR' logic)
-        if (filters.status && filters.status.length > 0) {
+        // If filters.status is an empty array (from 'Deselect All'), it means no rows should match this criteria.
+        if (filters.status) { // Ensure filters.status is defined in the filters object
             const rowStatus = row.status ? String(row.status) : '';
-            match = match && filters.status.includes(rowStatus);
+            if (Array.isArray(filters.status)) {
+                if (filters.status.length === 0) {
+                    // If no statuses are selected, then this filter should cause no matches
+                    match = false;
+                } else {
+                    // Match if the row's status is one of the selected ones
+                    match = match && filters.status.includes(rowStatus);
+                }
+            } else {
+                // This case should not typically happen with checkboxes, but for robustness
+                match = match && (rowStatus === filters.status);
+            }
         }
 
         // Check for threshold filter (multi-select 'OR' logic)
-        if (filters.threshold && filters.threshold.length > 0) {
+        // If filters.threshold is an empty array (from 'Deselect All'), it means no rows should match this criteria.
+        if (filters.threshold) { // Ensure filters.threshold is defined in the filters object
             const rowThreshold = row.threshold ? String(row.threshold) : '';
-            match = match && filters.threshold.includes(rowThreshold);
+            if (Array.isArray(filters.threshold)) {
+                if (filters.threshold.length === 0) {
+                    // If no thresholds are selected, then this filter should cause no matches
+                    match = false;
+                } else {
+                    // Match if the row's threshold is one of the selected ones
+                    match = match && filters.threshold.includes(rowThreshold);
+                }
+            } else {
+                // This case should not typically happen with checkboxes, but for robustness
+                match = match && (rowThreshold === filters.threshold);
+            }
         }
 
-        return match;
+        return match; // Return true if the row should be shown, false otherwise
     };
 
     // Apply filters using Bootstrap Table's filterBy method
@@ -459,26 +478,14 @@ function applyAllFilters() {
         filterAlgorithm: filterAlgorithm
     });
 
-    // Apply filters using Bootstrap Table's filterBy method
-    $reportTable.bootstrapTable('filterBy', filters, {
-        filterAlgorithm: filterAlgorithm
-    });
-
-    // === ADDITION TO REAPPLY SORTING ===
-    // Get the current sort state
+    // === Crucial Addition: Reapply current sorting after filtering ===
     const currentOptions = $reportTable.bootstrapTable('getOptions');
     const sortOrder = currentOptions.sortOrder;
     const sortName = currentOptions.sortName;
+    const sortPriority = currentOptions.sortPriority; // Get the initial sort priority
 
-    // Check if a single column is currently sorted (either by user click or initial single sort)
-    if (sortName) {
-        $reportTable.bootstrapTable('sort', {
-            field: sortName,
-            order: sortOrder
-        });
-    } else if (currentOptions.sortPriority && currentOptions.sortPriority.length > 0) {
-        // If no single column sort is active, but a multi-sort priority is defined, reapply it.
-        // This requires the 'multiple-sort' extension.
-        $reportTable.bootstrapTable('multiSort', currentOptions.sortPriority);
+
+    if (sortPriority && sortPriority.length > 0) {
+        $reportTable.bootstrapTable('multiSort', sortPriority);
     }
 }
