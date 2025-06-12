@@ -59,6 +59,20 @@ The example XLSX file used in the demo can be found in the `demo` folder.
 
 ---
 
+### 📊 Loyalty Rules
+The loyalty rules are defined in `js/config.js` and can be customized as needed.
+The system applies loyalty discounts based on the number of visits within a defined period. 
+
+The rules are as follows:
+
+| Rule Name                    | Visit Range    | Discount | Validity Period |
+|-----------------------------|----------------|----------|-----------------|
+| 30+ Wizyt                   | 30 or more     | 10%      | 365 days        |
+| Roczni Lojalni - Grupa 1    | 10–19 visits   | 5%       | 90 days         |
+| Roczni Lojalni - Grupa 2    | 20–29 visits   | 10%      | 180 days        |
+
+---
+
 ### 🔄 Step-by-Step Data Flow
 
 #### 1. **Date Range Selection**
@@ -135,12 +149,11 @@ The example XLSX file used in the demo can be found in the `demo` folder.
 
 ## 🚀 Setup and Usage
 
-1. **Clone or Download** the project files.
-2. **Open `index.html`** in your browser (no server required).
-3. **Upload XLSX Data**  
-   Click **“Wgraj plik XLSX”** and select your file (ensure it follows expected column format).
-4. **Explore the Report**  
-   Use filters and search to interactively explore patient data.
+1. **Clone or Download** the project files. 
+2. **Set up the loyalty rules** in `js/config.js` as needed.
+3. **Open `index.html`** in your browser (no server required).
+4. **Upload XLSX Data** Click **“Wgraj plik XLSX”** and select your file (ensure it follows expected column format).
+5. **Explore the Report** Use filters and search to interactively explore patient data.
 
 ---
 
