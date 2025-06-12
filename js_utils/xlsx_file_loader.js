@@ -10,12 +10,6 @@ const SOURCE_XLSX_FILE_COLUMN_TO_INDEX_MAP = {
     "Visit Info": 9
 };
 
-const PATIENT_REPORT_COLUMN_TO_INDEX_MAP = {
-    "Name and Surname": 0,
-    "Status": 4,
-    "Threshold": 5
-};
-
 // Get a reference to your table instance (initialize it here for global access)
 const $reportTable = $('#reportTable');
 
@@ -31,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastYear = new Date();
     lastYear.setFullYear(today.getFullYear() - 1);
 
-    // format
+    // set date format
     const fmt = d => d.toISOString().split('T')[0];
 
     inp.value = fmt(lastYear);
@@ -412,7 +406,6 @@ function applyAllFilters() {
         // This will be handled by the filterAlgorithm to return false for all rows
         filters.status = [];
     }
-
 
     // Add threshold filter if selections exist, OR if empty, make it so no rows match
     if (selectedThresholds.length > 0) {
