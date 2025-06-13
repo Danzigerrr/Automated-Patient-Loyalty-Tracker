@@ -8,12 +8,13 @@
 [![Live Demo](https://img.shields.io/badge/Live_Demo-online-green?logo=github&logoColor=white)](https://danzigerrr.github.io/Automated-Patient-Loyalty-Tracker/)
 
 
-This project provides a **client-side web application** for analyzing patient visit 
-data from an XLSX file and applying predefined loyalty rules. 
-It generates a **dynamic report table** with robust filtering and 
-sorting capabilities to help manage patient statuses and discounts.
-The XLSX file should be exported from [Medfile system](https://www.medfile.pl/), 
-which stores information about patient visits.
+This project provides a **client-side web application** for analyzing patient visit data from an XLSX file and applying predefined loyalty rules. 
+It generates a **dynamic report table** with robust filtering and sorting capabilities to help manage patient statuses and discounts.
+The XLSX file should be exported from [Medfile system](https://www.medfile.pl/), which stores information about patient visits.
+
+This project was developed for [FizjoActive – Rehabilitacja i Fizjoterapia Gdańsk](https://fizjoactivegdansk.pl/), a modern physiotherapy and rehabilitation clinic based in Gdańsk, Poland.
+FizjoActive specializes in providing personalized therapeutic care to support patient recovery and long-term well-being. 
+The loyalty system helps the clinic efficiently track visit history and reward returning patients, enhancing both engagement and continuity of care.
 
 The app is hosted using GitHub Pages: [Link](https://danzigerrr.github.io/Automated-Patient-Loyalty-Tracker/).
 
