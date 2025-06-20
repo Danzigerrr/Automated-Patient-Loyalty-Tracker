@@ -15,10 +15,15 @@ const formatDateToISO = d => d.toISOString().split('T')[0];
 
 // Toggle visibility of the file upload instruction
 function hideOrShowFileUploadInstruction() {
-    var x = document.getElementById("instruction");
-    if (x.style.display === "none") {
-        x.style.display = "block";
+    // Display/hide instruction text
+    var btn = document.getElementById("hideOrShowFileUploadInstructionBtn");
+    var text = document.getElementById("fileUploadInstruction");
+
+    if (text.style.display === 'none' || text.style.display === '') {
+        text.style.display = 'block'; 
+        btn.textContent = 'Ukryj instrukcję pobierania pliku'; 
     } else {
-        x.style.display = "none";
+        text.style.display = 'none';
+        btn.textContent = 'Pokaż instrukcję pobierania pliku'; 
     }
 }

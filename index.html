@@ -28,13 +28,13 @@
 </head>
 
 <body>
-<div class="container">
+<div class="container mx-4">
     <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
     <section id="configurationSection" class="mt-10">
         <div class="row text-left">
             <div class="col">
-                <label for="startDate" class="form-label">Data – początek okresu</label>
+                <label for="startDate" class="fw-bold">Data - początek okresu</label>
                 <input type="date" id="startDate" class="form-control" readonly>
                 <div class="form-text">
                     Określa początek okresu, dla którego będą liczone wizyty pacjentów.
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="col">
-                <label for="endDate" class="form-label">Data – koniec okresu</label>
+                <label for="endDate" class="fw-bold">Data - koniec okresu</label>
                 <input type="date" id="endDate" class="form-control" readonly>
                 <div class="form-text">
                     Określa koniec okresu, dla którego będą liczone wizyty pacjentów.
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <div class="col">
-                <label for="highlightThreshold" class="form-label">
+                <label for="highlightThreshold" class="fw-bold">
                     Liczba wizyt do wyróżnienia
                 </label>
                 <input type="number"
@@ -65,13 +65,13 @@
                 </div>
             </div>
             <div class="col">
-                <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
+                <label for="fileInput" class="fw-bold">Wgraj plik XLSX</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 
-                <button onclick="hideOrShowFileUploadInstruction()">Pokaż/Ukryj instrukcję pobierania pliku</button>
+                <button id="hideOrShowFileUploadInstructionBtn" onclick="hideOrShowFileUploadInstruction()" class="btn btn-outline-dark btn-sm">Pokaż instrukcję pobierania pliku</button>
 
                 <!-- Instructions, hidden by default -->
-                <div id="instruction" style="display: none;">
+                <div id="fileUploadInstruction" style="display: none;">
                     <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
                     <ol class="mb-0 ps-3">
                         <li>Moje konto</li>
