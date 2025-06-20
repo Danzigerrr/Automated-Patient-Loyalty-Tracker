@@ -16,8 +16,8 @@ const formatDateToISO = d => d.toISOString().split('T')[0];
 // Toggle visibility of the file upload instruction
 function hideOrShowFileUploadInstruction() {
     // Display/hide instruction text
-    var btn = document.getElementById("hideOrShowFileUploadInstructionBtn");
-    var text = document.getElementById("fileUploadInstruction");
+    const btn = document.getElementById("hideOrShowFileUploadInstructionBtn");
+    const text = document.getElementById("fileUploadInstruction");
 
     if (text.style.display === 'none' || text.style.display === '') {
         text.style.display = 'block'; 

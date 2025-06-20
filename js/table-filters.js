@@ -188,7 +188,7 @@ function populateThresholdDropdown(patients) {
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
         label.innerHTML = `
-            <input class="form-check-input threshold-option me-2 mx-2"
+            <input class="form-check-input threshold-option mx-2"
                 type="checkbox"
                 value="${val}"
                 id="${id}"
