@@ -65,13 +65,13 @@
                 </div>
             </div>
             <div class="col">
-                <label for="fileInput" class="fw-bold">Wgraj plik XLSX</label>
+                <label for="fileInput" class="fw-bold">Wgraj raport (plik XLSX)</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 
                 <button id="hideOrShowFileUploadInstructionBtn" onclick="hideOrShowFileUploadInstruction()" class="btn btn-outline-dark btn-sm">Pokaż instrukcję pobierania pliku</button>
 
                 <!-- Instructions, hidden by default -->
-                <div id="fileUploadInstruction" style="display: none;">
+                <div id="fileUploadInstruction" style="display: none;" class="form-text">
                     <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
                     <ol class="mb-0 ps-3">
                         <li>Moje konto</li>
@@ -90,7 +90,7 @@
     </section>
 
 
-    <section id="reportSection" class="mt-5">
+    <section id="reportSection" class="mt-5" >
         <h3 class="mb-3">Raport Pacjentów</h3>
 
         <form>
@@ -114,13 +114,15 @@
             <!-- Row 2: Status filter dropdown -->
             <div class="input-group">
                 <button
-                        class="btn btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        id="statusDropdown"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        data-bs-auto-close="outside">
+                    class="btn btn-secondary dropdown-toggle"
+                    type="button"
+                    id="statusDropdown"
+                    data-bs-toggle="dropdown" 
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    data-bs-auto-close="outside"
+                    data-filter-control="true"
+                    data-show-search-clear-button="true">
                     Wybierz rodzaje statusu <span class="caret"></span>
                 </button>
                 <!-- Use a div instead of ul -->
@@ -131,17 +133,16 @@
 
             <br>
             <!-- Row 3: Threshold filter dropdown -->
-            <div class="input-group">
+            <div class="input-group dropdown ">
                 <button
-                        class="btn btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        id="thresholdDropdown"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        data-bs-auto-close="outside"
-                        data-filter-control="true"
-                        data-show-search-clear-button="true">
+                    class="btn btn-secondary dropdown-toggle"
+                    type="button"
+                    id="thresholdDropdown"
+                    data-bs-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false"
+                    data-bs-auto-close="outside"
+                    data-filter-control="true"
+                    data-show-search-clear-button="true">
                     Wybierz liczbę wizyt to zmiany statusu <span class="caret"></span>
                 </button>
                 <!-- Use a div instead of ul -->
