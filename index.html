@@ -16,24 +16,24 @@
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/multiple-sort/bootstrap-table-multiple-sort.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 </head>
 
 <body>
-<div class="container py-4">
+<div class="container">
     <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
-    <section id="configurationSection" class="mt-5">
-        <div class="row g-4 align-items-end">
-            <div class="col-md-3">
+    <section id="configurationSection" class="mt-10">
+        <div class="row text-left">
+            <div class="col">
                 <label for="startDate" class="form-label">Data – początek okresu</label>
                 <input type="date" id="startDate" class="form-control" readonly>
                 <div class="form-text">
@@ -41,7 +41,7 @@
                     Ustawiana automatycznie na 1 rok wstecz od dzisiejszej daty.
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <label for="endDate" class="form-label">Data – koniec okresu</label>
                 <input type="date" id="endDate" class="form-control" readonly>
                 <div class="form-text">
@@ -49,7 +49,7 @@
                     Ustawiana automatycznie na dzisiejszą datę.
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <label for="highlightThreshold" class="form-label">
                     Liczba wizyt do wyróżnienia
                 </label>
@@ -64,7 +64,7 @@
                     jeśli do kolejnego progu zostało mniej lub równa liczba wizyt określona w tym polu.
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 
