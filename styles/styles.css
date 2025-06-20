@@ -63,30 +63,6 @@ tr:hover {
 }
 
 
-/* Ensure each dropdown-item takes full width and places checkbox/text in a row */
-/* #thresholdMenu .dropdown-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-} */
-
-/* Add spacing between checkbox and text */
-/* #thresholdMenu .threshold-option {
-    margin-right: 0.5rem;
-} */
-
-/* Ensure each dropdown-item takes full width and places checkbox/text in a row */
-#statusMenu .dropdown-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-/* Add spacing between checkbox and text */
-#statusMenu .status-option {
-    margin-right: 0.5rem;
-}
-
 /* Prevent dropdown from breaking layout */
 .dropdown {
     overflow: visible;
@@ -130,14 +106,12 @@ tr:hover {
 
 /* Highlight text when checkbox is checked */
 .status-option:checked + span {
-    font-weight: 500; 
     color: darkgreen; 
     font-weight: bolder;
 }
 
 /* Highlight text when checkbox is checked */
 .threshold-option:checked + span {
-    font-weight: 500; 
     color: darkgreen; 
     font-weight: bolder;
 }
