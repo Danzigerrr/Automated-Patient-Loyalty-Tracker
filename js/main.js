@@ -58,56 +58,82 @@ function handleFile(ev) {
         const grouped = {};
         raw.forEach(item => {
             const key = `${item.name} ${item.surname}`;
-            if (!grouped[key]) grouped[key] = { dates: [], totalVisits: 0 };
-            if (item.visitDate && item.visitDate !== '-') {
-                grouped[key].dates.push(new Date(item.visitDate));
+            if (!grouped[key]) {
+                grouped[key] = {
+                    name: item.name,        // Store name separately for easier access
+                    surname: item.surname,  // Store surname separately
+                    allVisitDates: []       // Renamed 'dates' to 'allVisitDates' for clarity
+                };
             }
-            grouped[key].totalVisits = item.totalVisitsCount;
+            if (item.visitDate && item.visitDate !== '-') {
+                // Ensure dates are parsed as Date objects here
+                const parsedDate = new Date(item.visitDate);
+                if (!isNaN(parsedDate.getTime())) { // Validate date parsing
+                    grouped[key].allVisitDates.push(parsedDate);
+                } else {
+                    console.warn(`Invalid date encountered for ${key}: ${item.visitDate}`);
+                }
+            }
+            // totalVisitsCount from excel is likely a cumulative count.
+            // We'll primarily rely on `allVisitDates` length for active loyalty calculations now.
+            // grouped[key].totalVisits = item.totalVisitsCount; // This might become redundant for loyalty calculation
         });
 
+        // In handleFile, within the `Object.entries(grouped).map(([fullName, p]) => { ... })` block
         const patients = Object.entries(grouped).map(([fullName, p]) => {
-            const visitsInPeriod = p.dates.filter(d => d >= startDate).length;
-            const lastVisitDate  = p.dates.length
-                ? new Date(Math.max(...p.dates.map(d => d.getTime())))
+            // Sort visits from oldest to newest for easier processing
+            p.allVisitDates.sort((a, b) => a.getTime() - b.getTime());
+
+            // Determine the last visit date
+            const lastVisitDate = p.allVisitDates.length > 0
+                ? p.allVisitDates[p.allVisitDates.length - 1]
                 : null;
 
-            // Base row data
-            const row = {
-                name:           fullName,
-                visitsInPeriod,
-                lastVisit:      lastVisitDate
-                    ? lastVisitDate.toISOString().split('T')[0]
-                    : '',
-                expires:        ''   // placeholder
-            };
-
-            // 1) Evaluate loyalty
-            let result = evaluateLoyalty({
-                visitsInPeriod: row.visitsInPeriod,
-                lastVisit:      lastVisitDate
+            // Pass all necessary info to evaluateLoyalty
+            const result = evaluateLoyalty({
+                lastVisit: lastVisitDate,
+                allVisitDates: p.allVisitDates // Pass the entire array of dates here for calculation
             });
 
-            // 2) Compute the expiration date
+            // Base row data that will be used by Bootstrap Table
+            const row = {
+                name: fullName,
+                visitsInPeriod: result.visitsInPeriodCount, // Store the calculated count for display
+                lastVisit: lastVisitDate
+                    ? lastVisitDate.toISOString().split('T')[0]
+                    : '',
+                expires: '', // placeholder, will be set below
+                // --- THIS IS THE CRUCIAL LINE TO ADD/ENSURE IT'S THERE ---
+                originalAllVisitDates: p.allVisitDates // Store the original full array of Date objects
+                                                    // Renamed to 'originalAllVisitDates' for clarity
+                                                    // that it's the raw data passed for re-evaluation in rowStyle.
+            };
+
+            // 2) Compute the expiration date and handle reset logic if expired
             let expiryDate = '----';
             if (lastVisitDate && result.status !== 'Brak statusu') {
                 const rule = LOYALTY_RULES.find(r => r.name === result.status);
-                const e = new Date(lastVisitDate);
-                e.setDate(e.getDate() + (rule?.validityDays || 0));
+                if (rule && rule.validityDays > 0) {
+                    const e = new Date(lastVisitDate);
+                    e.setDate(e.getDate() + rule.validityDays);
 
-                // If expiry has passed, override status
-                if (e < new Date()) {
-                    result.status = 'Brak statusu';
-                    result.discount = 0;
-                    expiryDate = '----';
-                } else {
-                    expiryDate = e.toISOString().split('T')[0];
+                    if (e < new Date()) {
+                        // If expiry has passed based on the rule, override status to "Brak statusu"
+                        result.status = 'Brak statusu';
+                        result.discount = 0;
+                        result.nextThreshold = LOYALTY_RULES[0].min; // Set to the first threshold for "Brak statusu"
+                        result.visitsInPeriodCount = 0; // Reset visit count for display
+                        expiryDate = '----'; // No specific expiry if status is "Brak statusu"
+                    } else {
+                        expiryDate = e.toISOString().split('T')[0];
+                    }
                 }
             }
 
-            row.expires   = expiryDate;
-            row.status    = result.status;
+            row.expires = expiryDate;
+            row.status = result.status;
             row.threshold = result.nextThreshold;
-            row.discount  = result.discount;
+            row.discount = result.discount;
 
             return row;
         });
