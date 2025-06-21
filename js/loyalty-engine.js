@@ -44,15 +44,9 @@ function evaluateLoyalty({ allVisitDates }) {
     let visitsCount     = 0;
     let validityLeft    = 0;    // days remaining before current status expires
 
-    // Walk through unique visit dates, sorted chronologically
-    const sortedVisitDates = Object.keys(visitCountsByDay).sort();
-    let previousDate = startDate;
-    for (const visitDate of sortedVisitDates) {
-        const currentDate = new Date(visitDate);
-
-        // Decrement validity counter for days between previousDate and currentDate
-        const daysElapsed = Math.floor((currentDate - previousDate) / (1000 * 60 * 60 * 24));
-        validityLeft = Math.max(0, validityLeft - daysElapsed);
+    // Walk each day from the first visit to today
+    for (let day = new Date(startDate); day <= now; day.setDate(day.getDate() + 1)) {
+        const key = day.toISOString().slice(0,10);
         // 1) Check expiry before counting today’s visits
         if (validityLeft <= 0 && currentStatus !== 'Brak statusu') {
             // Status has expired: reset completely
