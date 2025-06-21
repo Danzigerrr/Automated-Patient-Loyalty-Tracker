@@ -106,7 +106,7 @@ function evaluateLoyalty({ allVisitDates }) {
         status: currentStatus,
         discount: currentDiscount,
         nextThreshold: String(nextThreshold),
-        highlightNext: nextThreshold <= threshold,
+        highlightNext: nextThreshold > 0 && nextThreshold <= threshold,
         expired: (currentStatus === 'Brak statusu' && visitsCount > 0),
         visitsInPeriodCount: visitsCount,
         expiryDate

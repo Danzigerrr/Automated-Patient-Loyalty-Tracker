@@ -68,7 +68,7 @@
                 <label for="fileInput" class="fw-bold">Wgraj raport (plik XLSX)</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 
-                <button id="hideOrShowFileUploadInstructionBtn" onclick="hideOrShowFileUploadInstruction()" class="btn btn-outline-dark btn-sm">Pokaż instrukcję pobierania pliku</button>
+                <button id="hideOrShowFileUploadInstructionBtn" onclick="hideOrShowFileUploadInstruction()" class="btn btn-outline-secondary btn-sm">Pokaż instrukcję pobierania pliku</button>
 
                 <!-- Instructions, hidden by default -->
                 <div id="fileUploadInstruction" style="display: none;" class="form-text">
@@ -96,7 +96,7 @@
         <form class="mb-4">
         <div class="row g-3 align-items-center">
             <!-- Row 1: Search -->
-            <div class="col-12">
+            <div class="col-12 col-md-8 col-lg-6">
                 <div class="input-group">
                     <span class="input-group-text" id="search-addon">
                     🔍 Szukaj pacjenta…
@@ -126,7 +126,7 @@
                                 aria-expanded="false"
                                 data-bs-auto-close="outside"
                             >
-                                Wybierz status
+                                Status pacjenta
                             </button>
                             <div
                                 class="dropdown-menu"
@@ -149,7 +149,7 @@
                                 aria-expanded="false"
                                 data-bs-auto-close="outside"
                             >
-                                Wizyt do statusu
+                                Liczba wizyt do zmiany statusu
                             </button>
                             <div
                                 class="dropdown-menu"
@@ -166,11 +166,11 @@
                 <!-- 2) Quick‑toggle buttons -->
                 <label class="btn btn-warning mb-0">
                 <input type="checkbox" id="statusExpiringButton" class="me-1">
-                ⏳ Wygasa w 7 dni
+                ⏳ Wygasa w ciągu 7 dni
                 </label>
                 <label class="btn btn-success mb-0">
                 <input type="checkbox" id="statusUpgradingButton" class="me-1">
-                ✨ Wzrośnie w 3 wizytach
+                ✨ Wzrośnie przy kolejnych 3 wizytach
                 </label>
             </div>
         </form>
