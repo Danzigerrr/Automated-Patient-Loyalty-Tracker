@@ -7,13 +7,13 @@ const $reportTable = $('#reportTable');
 document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('startDate');
     const today = new Date();
-    const lastYear = new Date();
-    lastYear.setFullYear(today.getFullYear() - 1);
 
-    inp.value = formatDateToISO(lastYear); // Use helper from utils.js
-    inp.max   = formatDateToISO(today);   // Use helper from utils.js
+    const daysToSubtract = 365;
+    const exactDaysAgo = new Date(today); 
+    exactDaysAgo.setDate(today.getDate() - daysToSubtract); 
+
+    inp.value = formatDateToISO(exactDaysAgo); 
 });
-
 // Set default starting date to one year ago, with max attribute to today
 document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('endDate');
@@ -58,56 +58,56 @@ function handleFile(ev) {
         const grouped = {};
         raw.forEach(item => {
             const key = `${item.name} ${item.surname}`;
-            if (!grouped[key]) grouped[key] = { dates: [], totalVisits: 0 };
-            if (item.visitDate && item.visitDate !== '-') {
-                grouped[key].dates.push(new Date(item.visitDate));
+            if (!grouped[key]) {
+                grouped[key] = {
+                    name: item.name,        // Store name separately for easier access
+                    surname: item.surname,  // Store surname separately
+                    allVisitDates: []       // Renamed 'dates' to 'allVisitDates' for clarity
+                };
             }
-            grouped[key].totalVisits = item.totalVisitsCount;
-        });
-
-        const patients = Object.entries(grouped).map(([fullName, p]) => {
-            const visitsInPeriod = p.dates.filter(d => d >= startDate).length;
-            const lastVisitDate  = p.dates.length
-                ? new Date(Math.max(...p.dates.map(d => d.getTime())))
-                : null;
-
-            // Base row data
-            const row = {
-                name:           fullName,
-                visitsInPeriod,
-                lastVisit:      lastVisitDate
-                    ? lastVisitDate.toISOString().split('T')[0]
-                    : '',
-                expires:        ''   // placeholder
-            };
-
-            // 1) Evaluate loyalty
-            let result = evaluateLoyalty({
-                visitsInPeriod: row.visitsInPeriod,
-                lastVisit:      lastVisitDate
-            });
-
-            // 2) Compute the expiration date
-            let expiryDate = '----';
-            if (lastVisitDate && result.status !== 'Brak statusu') {
-                const rule = LOYALTY_RULES.find(r => r.name === result.status);
-                const e = new Date(lastVisitDate);
-                e.setDate(e.getDate() + (rule?.validityDays || 0));
-
-                // If expiry has passed, override status
-                if (e < new Date()) {
-                    result.status = 'Brak statusu';
-                    result.discount = 0;
-                    expiryDate = '----';
+            if (item.visitDate && item.visitDate !== '-') {
+                // Ensure dates are parsed as Date objects here
+                const parsedDate = new Date(item.visitDate);
+                if (!isNaN(parsedDate.getTime())) { // Validate date parsing
+                    grouped[key].allVisitDates.push(parsedDate);
                 } else {
-                    expiryDate = e.toISOString().split('T')[0];
+                    console.warn(`Invalid date encountered for ${key}: ${item.visitDate}`);
                 }
             }
+            // totalVisitsCount from excel is likely a cumulative count.
+            // We'll primarily rely on `allVisitDates` length for active loyalty calculations now.
+            // grouped[key].totalVisits = item.totalVisitsCount; // This might become redundant for loyalty calculation
+        });
 
-            row.expires   = expiryDate;
-            row.status    = result.status;
+        // In handleFile, within the `Object.entries(grouped).map(([fullName, p]) => { ... })` block
+        const patients = Object.entries(grouped).map(([fullName, p]) => {
+            // Sort visits from oldest to newest for easier processing
+            p.allVisitDates.sort((a, b) => a.getTime() - b.getTime());
+
+            // Determine the last visit date
+            const lastVisitDate = p.allVisitDates.length > 0
+                ? p.allVisitDates[p.allVisitDates.length - 1]
+                : null;
+
+            // Pass all necessary info to evaluateLoyalty
+            const result = evaluateLoyalty({
+                allVisitDates: p.allVisitDates // the entire array of dates
+            });
+
+            // Base row data that will be used by Bootstrap Table
+            const row = {
+                name: fullName,
+                visitsInPeriod: result.visitsInPeriodCount, // Store the calculated count for display
+                lastVisit: lastVisitDate
+                    ? lastVisitDate.toISOString().split('T')[0]
+                    : '',
+                originalAllVisitDates: p.allVisitDates 
+            };
+
+            row.expires = result.expiryDate;
+            row.status = result.status;
             row.threshold = result.nextThreshold;
-            row.discount  = result.discount;
+            row.discount = result.discount;
 
             return row;
         });

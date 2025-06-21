@@ -188,13 +188,12 @@ function populateThresholdDropdown(patients) {
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
         label.innerHTML = `
-      <input class="form-check-input threshold-option me-2"
-             type="checkbox"
-             value="${val}"
-             id="${id}"
-             checked>
-      ${val}
-    `;
+            <input class="form-check-input threshold-option mx-2"
+                type="checkbox"
+                value="${val}"
+                id="${id}"
+                checked>
+            <span>${val}</span> `;
 
         // prevent dropdown from closing when clicking label or checkbox
         label.addEventListener('click', e => e.stopPropagation());
@@ -251,13 +250,14 @@ function populateStatusDropdown(patients) {
         label.className = 'dropdown-item form-check mb-0';
         label.style.cursor = 'pointer';
         label.innerHTML = `
-      <input type="checkbox"
-             class="form-check-input status-option me-2"
-             id="${id}"
-             value="${status}"
-             checked>
-      ${status}
-    `;
+            <input class="form-check-input status-option me-2 mx-2"
+                type="checkbox"
+                id="${id}"
+                value="${status}"
+                checked>
+            <span>${status}</span> `;
+
+
         // prevent dropdown from closing
         label.addEventListener('click', e => e.stopPropagation());
         label.querySelector('input')

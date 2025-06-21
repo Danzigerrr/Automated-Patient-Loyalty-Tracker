@@ -16,41 +16,46 @@
 
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles/styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.css" rel="stylesheet">
+    
 
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/bootstrap-table.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/multiple-sort/bootstrap-table-multiple-sort.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.24.1/dist/extensions/multiple-sort/bootstrap-table-multiple-sort.js"></script>
+
 
 </head>
 
 <body>
-<div class="container py-4">
+<div class="container">
     <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
-    <section id="configurationSection" class="mt-5">
-        <div class="row g-4 align-items-end">
-            <div class="col-md-3">
-                <label for="startDate" class="form-label">Data – początek okresu</label>
+    <section id="configurationSection" class="mt-10">
+        <div class="row text-left">
+            <div class="col">
+                <label for="startDate" class="fw-bold">Data - początek okresu</label>
                 <input type="date" id="startDate" class="form-control" readonly>
                 <div class="form-text">
                     Określa początek okresu, dla którego będą liczone wizyty pacjentów.
                     Ustawiana automatycznie na 1 rok wstecz od dzisiejszej daty.
                 </div>
             </div>
-            <div class="col-md-3">
-                <label for="endDate" class="form-label">Data – koniec okresu</label>
+            <div class="col">
+                <label for="endDate" class="fw-bold">Data - koniec okresu</label>
                 <input type="date" id="endDate" class="form-control" readonly>
                 <div class="form-text">
                     Określa koniec okresu, dla którego będą liczone wizyty pacjentów.
                     Ustawiana automatycznie na dzisiejszą datę.
                 </div>
             </div>
-            <div class="col-md-3">
-                <label for="highlightThreshold" class="form-label">
+            <div class="col">
+                <label for="highlightThreshold" class="fw-bold">
                     Liczba wizyt do wyróżnienia
                 </label>
                 <input type="number"
@@ -64,14 +69,14 @@
                     jeśli do kolejnego progu zostało mniej lub równa liczba wizyt określona w tym polu.
                 </div>
             </div>
-            <div class="col-md-3">
-                <label for="fileInput" class="form-label">Wgraj plik XLSX</label>
+            <div class="col">
+                <label for="fileInput" class="fw-bold">Wgraj raport (plik XLSX)</label>
                 <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-2">
 
-                <button onclick="hideOrShowFileUploadInstruction()">Pokaż/Ukryj instrukcję pobierania pliku</button>
+                <button id="hideOrShowFileUploadInstructionBtn" onclick="hideOrShowFileUploadInstruction()" class="btn btn-outline-secondary btn-sm">Pokaż instrukcję pobierania pliku</button>
 
                 <!-- Instructions, hidden by default -->
-                <div id="instruction" style="display: none;">
+                <div id="fileUploadInstruction" style="display: none;" class="form-text">
                     <strong>Instrukcja pobierania pliku z panelu Medfile:</strong>
                     <ol class="mb-0 ps-3">
                         <li>Moje konto</li>
@@ -90,84 +95,90 @@
     </section>
 
 
-    <section id="reportSection" class="mt-5">
+    <section id="reportSection" class="mt-5" >
         <h3 class="mb-3">Raport Pacjentów</h3>
 
-        <form>
-            <!-- Row 1: Search by patient name -->
-            <div class="input-group">
-                <span class="input-group-text" id="search-addon">🔍 Szukaj pacjenta…
-                    <i class="bi bi-search"></i>
-                </span>
-                <input
-                        type="text"
-                        id="patientSearch"
-                        class="form-control"
-                        placeholder="Imię i nazwisko"
-                        aria-label="Search patient"
-                        aria-describedby="search-addon"
-                >
-            </div>
-
-            <br>
-
-            <!-- Row 2: Status filter dropdown -->
-            <div class="input-group">
-                <button
-                        class="btn btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        id="statusDropdown"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        data-bs-auto-close="outside">
-                    Wybierz rodzaje statusu <span class="caret"></span>
-                </button>
-                <!-- Use a div instead of ul -->
-                <div class="dropdown-menu" aria-labelledby="statusDropdown" id="statusMenu" >
-                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+        <form class="mb-4">
+        <div class="row g-3 align-items-center">
+            <!-- Row 1: Search -->
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text" id="search-addon">
+                    🔍 Szukaj pacjenta…
+                    </span>
+                    <input
+                    type="text"
+                    id="patientSearch"
+                    class="form-control"
+                    placeholder="Imię i nazwisko"
+                    aria-label="Search patient"
+                    aria-describedby="search-addon"
+                    >
                 </div>
             </div>
 
-            <br>
-            <!-- Row 3: Threshold filter dropdown -->
-            <div class="input-group">
-                <button
-                        class="btn btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        id="thresholdDropdown"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                        data-bs-auto-close="outside"
-                        data-filter-control="true"
-                        data-show-search-clear-button="true">
-                    Wybierz liczbę wizyt to zmiany statusu <span class="caret"></span>
-                </button>
-                <!-- Use a div instead of ul -->
-                <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu" >
-                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <!-- 1) Both dropdowns, fixed side-by-side -->
+                <div class="d-flex gap-2">
+                    <!-- Status filter dropdown -->
+                            <div class="dropdown">
+                            <button
+                                class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                id="statusDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                data-bs-auto-close="outside"
+                            >
+                                Status pacjenta
+                            </button>
+                            <div
+                                class="dropdown-menu"
+                                id="statusMenu"
+                                aria-labelledby="statusDropdown"
+                                style="min-width: 200px;"
+                            >
+                                <!-- injected items -->
+                            </div>
+                            </div>
+
+                            <!-- Threshold filter dropdown -->
+                            <div class="dropdown">
+                            <button
+                                class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                id="thresholdDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                data-bs-auto-close="outside"
+                            >
+                                Liczba wizyt do zmiany statusu
+                            </button>
+                            <div
+                                class="dropdown-menu"
+                                id="thresholdMenu"
+                                aria-labelledby="thresholdDropdown"
+                                style="min-width: 150px;"
+                            >
+                                <!-- injected items -->
+                            </div>
+                            </div>
+
                 </div>
+
+                <!-- 2) Quick‑toggle buttons -->
+                <label class="btn btn-warning mb-0">
+                <input type="checkbox" id="statusExpiringButton" class="me-1">
+                ⏳ Wygasa w ciągu 7 dni
+                </label>
+                <label class="btn btn-success mb-0">
+                <input type="checkbox" id="statusUpgradingButton" class="me-1">
+                ✨ Wzrośnie przy kolejnych 3 wizytach
+                </label>
             </div>
-
-            <!-- Status Quick Filter Buttons -->
-            <br>
-             <label class="btn btn-warning">
-                <input type="checkbox" id="statusExpiringButton">
-                ⏳ Pacjenci, którym status wygasa w ciągu 7 dni
-            </label>
-
-            <br>
-            <br>
-
-            <label class="btn btn-success">
-                <input type="checkbox" id="statusUpgradingButton">
-                ✨ Pacjenci, którym status wzrośnie w ciągu 3 wizyt
-            </label>
-
         </form>
-
-        <br>
 
         <div>
 
@@ -177,6 +188,7 @@
                     data-toggle="table"
                     data-show-columns="true"
                     data-show-multi-sort="true"
+                            data-show-multi-sort-button="true"  
                     data-buttons-align="left"
             >
                 <thead>
