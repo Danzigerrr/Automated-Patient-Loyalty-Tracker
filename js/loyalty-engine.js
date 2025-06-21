@@ -1,99 +1,125 @@
+
+const MAX_VISIT_CONSIDERATION_DAYS = Math.max(...LOYALTY_RULES.map(r => r.validityDays));
+
 // Evaluates loyalty status based on the rules defined in config.js
-function evaluateLoyalty({ lastVisit, allVisitDates }) {
+
+// --- evaluateLoyalty Method (UPDATED) ---
+// --- evaluateLoyalty (chronological daily iteration) ---
+function evaluateLoyalty({ allVisitDates }) {
     const now = new Date();
-
-    // Read dynamic highlight threshold:
+    // Read highlight threshold from the DOM (default: 3)
     const thresholdInput = document.getElementById('highlightThreshold');
-    let threshold = 3;
-    if (thresholdInput) {
-        const v = parseInt(thresholdInput.value, 10);
-        if (!isNaN(v) && v > 0) threshold = v;
-    }
+    const threshold = thresholdInput
+        ? Math.max(1, parseInt(thresholdInput.value, 10) || 3)
+        : 3;
 
-    let visitsInCurrentPeriod = 0; // This will hold the count relevant to the current rule's validity
+    // Prepare rules, sorted ascending by min visits
+    const rulesByMinAsc = [...LOYALTY_RULES].sort((a, b) => a.min - b.min);
+    // Prepare a fast lookup for each day’s visits
+    const visitCountsByDay = allVisitDates.reduce((map, dt) => {
+        const key = dt.toISOString().slice(0,10);
+        map[key] = (map[key] || 0) + 1;
+        return map;
+    }, {});
 
-    // Sort rules by min visits descending to match highest applicable status first
-    // This is important because a patient with 10 visits might qualify for Group 2 (min 10)
-    // before Group 1 (min 5).
-    const sortedRules = [...LOYALTY_RULES].sort((a, b) => b.min - a.min);
-
-    let foundStatus = null;
-
-    for (let rule of sortedRules) {
-        if (rule.name === 'Brak statusu' && allVisitDates.length > 0 && lastVisit) {
-            // Special handling for "Brak statusu" - only apply if no other rule matches
-            // or if all applicable rules have expired visits.
-            continue;
-        }
-
-        let validityStartConsideringLastVisit = null;
-        if (lastVisit && rule.validityDays > 0) {
-            validityStartConsideringLastVisit = new Date(lastVisit);
-            validityStartConsideringLastVisit.setDate(validityStartConsideringLastVisit.getDate() - rule.validityDays);
-        } else if (lastVisit && rule.validityDays === 0) {
-            // For rules with 0 validity, visits must be today (or very recent) to count
-            // This case might be more for 'Brak statusu' or special promotions.
-            validityStartConsideringLastVisit = new Date(now); // Set to now to effectively check if last visit is today
-            validityStartConsideringLastVisit.setHours(0, 0, 0, 0); // Start of today
-        } else {
-            // No last visit, so no visits in any validity period for status rules that require them
-            // This is handled by visitsInCurrentPeriod remaining 0
-        }
-
-        // Filter visits based on the *current rule's* validity period
-        // If no last visit, visitsInCurrentPeriod remains 0, naturally failing min thresholds.
-        visitsInCurrentPeriod = allVisitDates.filter(visitDate => {
-            return lastVisit && validityStartConsideringLastVisit && visitDate >= validityStartConsideringLastVisit && visitDate <= now;
-        }).length;
-
-        // Check if the current patient's *active* visits meet this rule's criteria
-        if (visitsInCurrentPeriod >= rule.min && visitsInCurrentPeriod < rule.max) {
-            // Determine if the status has effectively "expired" due to lack of recent visits
-            const expiredDueToNoRecentVisits = (rule.validityDays > 0 && lastVisit && daysBetween(lastVisit, now) > rule.validityDays);
-
-            if (!expiredDueToNoRecentVisits) {
-                foundStatus = {
-                    status: rule.name,
-                    discount: rule.discount,
-                    nextThreshold: rule.max === Infinity ? '0' : `${rule.max - visitsInCurrentPeriod}`,
-                    highlightNext: (rule.max !== Infinity && (rule.max - visitsInCurrentPeriod) <= threshold),
-                    expired: false, // Not expired based on this check
-                    visitsInPeriodCount: visitsInCurrentPeriod // Add this to return
-                };
-                break; // Found the highest applicable status, exit loop
-            }
-        }
-    }
-
-    // If no status was found based on the new logic, or it explicitly expired, set to "Brak statusu"
-    if (!foundStatus) {
-        const firstRule = sortedRules.find(r => r.name === 'Brak statusu') || LOYALTY_RULES[0]; // Fallback to first defined rule
-        let toFirst = firstRule.min - visitsInCurrentPeriod;
-        if (toFirst < 0) toFirst = 0; // Cannot be negative
-
+    // If no visits at all, immediately return base “Brak statusu”
+    if (allVisitDates.length === 0) {
+        const nextRule = rulesByMinAsc.find(r => r.name !== 'Brak statusu');
+        const nextThreshold = nextRule ? Math.max(0, nextRule.min) : 0;
         return {
             status: 'Brak statusu',
             discount: 0,
-            nextThreshold: `${toFirst}`,
-            highlightNext: toFirst <= threshold,
-            expired: true, // Mark as expired if no active status
-            visitsInPeriodCount: 0 // Reset count for 'Brak statusu'
+            nextThreshold: String(nextThreshold),
+            highlightNext: nextThreshold <= threshold,
+            expired: false,
+            visitsInPeriodCount: 0,
+            expiryDate: '----'
         };
     }
 
-    return foundStatus;
+    // Start from the date of the very first visit
+    const startDate = new Date(allVisitDates[0].toISOString().slice(0,10));
+    let currentStatus   = 'Brak statusu';
+    let currentDiscount = 0;
+    let visitsCount     = 0;
+    let validityLeft    = 0;    // days remaining before current status expires
+
+    // Walk each day from the first visit to today
+    for (let day = new Date(startDate); day <= now; day.setDate(day.getDate() + 1)) {
+        const key = day.toISOString().slice(0,10);
+        // 1) Check expiry before counting today’s visits
+        if (validityLeft <= 0 && currentStatus !== 'Brak statusu') {
+            // Status has expired: reset completely
+            currentStatus   = 'Brak statusu';
+            currentDiscount = 0;
+            visitsCount     = 0;
+            validityLeft    = 0;
+        }
+
+        // 2) If there was a visit today, absorb it
+        const todayVisits = visitCountsByDay[key] || 0;
+        if (todayVisits > 0) {
+            visitsCount += todayVisits;
+
+            // Determine highest‐level rule we now qualify for
+            // (rule.min <= visitsCount < rule.max)
+            const newRule = LOYALTY_RULES
+                .filter(r => r.name !== 'Brak statusu')
+                .find(r => visitsCount >= r.min && visitsCount < r.max);
+
+            if (newRule) {
+                // If we’ve moved into a higher tier (or reinstated the same),
+                // set status and reset validityLeft from this day
+                currentStatus   = newRule.name;
+                currentDiscount = newRule.discount;
+                validityLeft    = newRule.validityDays;
+            }
+        }
+
+        // 3) At end of day, decrement validity counter
+        if (validityLeft > 0) {
+            validityLeft--;
+        }
+    }
+
+    // After looping, today’s visitsCount and currentStatus are final
+    // Compute nextThreshold: how many more visits to reach the next tier
+    const activeRule = LOYALTY_RULES.find(r => r.name === currentStatus);
+    let nextThreshold;
+    if (activeRule && activeRule.max !== Infinity) {
+        nextThreshold = Math.max(0, activeRule.max - visitsCount);
+    } else {
+        // from Brak statusu into first real tier
+        const firstRule = rulesByMinAsc.find(r => r.name !== 'Brak statusu');
+        nextThreshold = firstRule ? Math.max(0, firstRule.min - visitsCount) : 0;
+    }
+
+    // Compute expiryDate for display
+    let expiryDate = '----';
+    if (activeRule && activeRule.validityDays > 0 && currentStatus !== 'Brak statusu') {
+        const exp = new Date(now);
+        exp.setDate(exp.getDate() + validityLeft);
+        expiryDate = exp.toISOString().slice(0,10);
+    }
+
+    return {
+        status: currentStatus,
+        discount: currentDiscount,
+        nextThreshold: String(nextThreshold),
+        highlightNext: nextThreshold <= threshold,
+        expired: (currentStatus === 'Brak statusu' && visitsCount > 0),
+        visitsInPeriodCount: visitsCount,
+        expiryDate
+    };
 }
 
-// --- rowStyle Method ---
-// Depends on: evaluateLoyalty and lastVisitDateObj (from utils.js)
-// Assuming lastVisitDateObj converts a string date to a Date object,
-// but now evaluateLoyalty needs the *raw Date object* for allVisitDates,
-// and the lastVisitDateObj should handle parsing if `row.lastVisit` is a string.
+
+
 // --- rowStyle Method ---
 function rowStyle(row) {
     const groupClassMap = {
-        'Roczni Lojalni - Grupa 1': 'group-yearly1',
-        'Roczni Lojalni - Grupa 2': 'group-yearly2',
+        'Roczni Lojalni - 1': 'group-yearly1',
+        'Roczni Lojalni - 2': 'group-yearly2',
         '30+ Wizyt': 'group-over30',
         'Brak statusu': 'group-none'
     };
