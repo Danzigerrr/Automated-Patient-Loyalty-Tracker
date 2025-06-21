@@ -128,4 +128,8 @@ tr:hover {
     font-weight: bolder;
 }
 
+/* in your stylesheet */
+.dropdown-menu--wide {
+  min-width: 300px;  /* or whatever width you prefer */
+}
 

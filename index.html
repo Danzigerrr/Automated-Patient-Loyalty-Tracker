@@ -28,7 +28,7 @@
 </head>
 
 <body>
-<div class="container mx-4">
+<div class="container">
     <h2 class="mb-4 text-primary text-center" >FizjoActive - System Lojalnościowy</h2>
 
     <section id="configurationSection" class="mt-10">
@@ -93,82 +93,87 @@
     <section id="reportSection" class="mt-5" >
         <h3 class="mb-3">Raport Pacjentów</h3>
 
-        <form>
-            <!-- Row 1: Search by patient name -->
-            <div class="input-group">
-                <span class="input-group-text" id="search-addon">🔍 Szukaj pacjenta…
-                    <i class="bi bi-search"></i>
-                </span>
-                <input
-                        type="text"
-                        id="patientSearch"
-                        class="form-control"
-                        placeholder="Imię i nazwisko"
-                        aria-label="Search patient"
-                        aria-describedby="search-addon"
-                >
-            </div>
-
-            <br>
-
-            <!-- Row 2: Status filter dropdown -->
-            <div class="input-group">
-                <button
-                    class="btn btn-secondary dropdown-toggle"
-                    type="button"
-                    id="statusDropdown"
-                    data-bs-toggle="dropdown" 
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    data-bs-auto-close="outside"
-                    data-filter-control="true"
-                    data-show-search-clear-button="true">
-                    Wybierz rodzaje statusu <span class="caret"></span>
-                </button>
-                <!-- Use a div instead of ul -->
-                <div class="dropdown-menu" aria-labelledby="statusDropdown" id="statusMenu" >
-                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+        <form class="mb-4">
+        <div class="row g-3 align-items-center">
+            <!-- Row 1: Search -->
+            <div class="col-12">
+                <div class="input-group">
+                    <span class="input-group-text" id="search-addon">
+                    🔍 Szukaj pacjenta…
+                    </span>
+                    <input
+                    type="text"
+                    id="patientSearch"
+                    class="form-control"
+                    placeholder="Imię i nazwisko"
+                    aria-label="Search patient"
+                    aria-describedby="search-addon"
+                    >
                 </div>
             </div>
 
-            <br>
-            <!-- Row 3: Threshold filter dropdown -->
-            <div class="input-group dropdown ">
-                <button
-                    class="btn btn-secondary dropdown-toggle"
-                    type="button"
-                    id="thresholdDropdown"
-                    data-bs-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false"
-                    data-bs-auto-close="outside"
-                    data-filter-control="true"
-                    data-show-search-clear-button="true">
-                    Wybierz liczbę wizyt to zmiany statusu <span class="caret"></span>
-                </button>
-                <!-- Use a div instead of ul -->
-                <div class="dropdown-menu" aria-labelledby="thresholdDropdown" id="thresholdMenu" >
-                    <!-- JS will inject <a class="dropdown-item">…</a> here -->
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <!-- 1) Both dropdowns, fixed side-by-side -->
+                <div class="d-flex gap-2">
+                    <!-- Status filter dropdown -->
+                            <div class="dropdown">
+                            <button
+                                class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                id="statusDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                data-bs-auto-close="outside"
+                            >
+                                Wybierz status
+                            </button>
+                            <div
+                                class="dropdown-menu"
+                                id="statusMenu"
+                                aria-labelledby="statusDropdown"
+                                style="min-width: 200px;"
+                            >
+                                <!-- injected items -->
+                            </div>
+                            </div>
+
+                            <!-- Threshold filter dropdown -->
+                            <div class="dropdown">
+                            <button
+                                class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                id="thresholdDropdown"
+                                data-bs-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                data-bs-auto-close="outside"
+                            >
+                                Wizyt do statusu
+                            </button>
+                            <div
+                                class="dropdown-menu"
+                                id="thresholdMenu"
+                                aria-labelledby="thresholdDropdown"
+                                style="min-width: 150px;"
+                            >
+                                <!-- injected items -->
+                            </div>
+                            </div>
+
                 </div>
+
+                <!-- 2) Quick‑toggle buttons -->
+                <label class="btn btn-warning mb-0">
+                <input type="checkbox" id="statusExpiringButton" class="me-1">
+                ⏳ Wygasa w 7 dni
+                </label>
+                <label class="btn btn-success mb-0">
+                <input type="checkbox" id="statusUpgradingButton" class="me-1">
+                ✨ Wzrośnie w 3 wizytach
+                </label>
             </div>
-
-            <!-- Status Quick Filter Buttons -->
-            <br>
-             <label class="btn btn-warning">
-                <input type="checkbox" id="statusExpiringButton">
-                ⏳ Pacjenci, którym status wygasa w ciągu 7 dni
-            </label>
-
-            <br>
-            <br>
-
-            <label class="btn btn-success">
-                <input type="checkbox" id="statusUpgradingButton">
-                ✨ Pacjenci, którym status wzrośnie w ciągu 3 wizyt
-            </label>
-
         </form>
-
-        <br>
 
         <div>
 

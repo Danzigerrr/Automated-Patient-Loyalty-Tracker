@@ -7,13 +7,13 @@ const $reportTable = $('#reportTable');
 document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('startDate');
     const today = new Date();
-    const lastYear = new Date();
-    lastYear.setFullYear(today.getFullYear() - 1);
 
-    inp.value = formatDateToISO(lastYear); // Use helper from utils.js
-    inp.max   = formatDateToISO(today);   // Use helper from utils.js
+    const daysToSubtract = 365;
+    const exactDaysAgo = new Date(today); 
+    exactDaysAgo.setDate(today.getDate() - daysToSubtract); 
+
+    inp.value = formatDateToISO(exactDaysAgo); 
 });
-
 // Set default starting date to one year ago, with max attribute to today
 document.addEventListener('DOMContentLoaded', () => {
     const inp = document.getElementById('endDate');
@@ -91,8 +91,7 @@ function handleFile(ev) {
 
             // Pass all necessary info to evaluateLoyalty
             const result = evaluateLoyalty({
-                lastVisit: lastVisitDate,
-                allVisitDates: p.allVisitDates // Pass the entire array of dates here for calculation
+                allVisitDates: p.allVisitDates // the entire array of dates
             });
 
             // Base row data that will be used by Bootstrap Table
@@ -102,35 +101,10 @@ function handleFile(ev) {
                 lastVisit: lastVisitDate
                     ? lastVisitDate.toISOString().split('T')[0]
                     : '',
-                expires: '', // placeholder, will be set below
-                // --- THIS IS THE CRUCIAL LINE TO ADD/ENSURE IT'S THERE ---
-                originalAllVisitDates: p.allVisitDates // Store the original full array of Date objects
-                                                    // Renamed to 'originalAllVisitDates' for clarity
-                                                    // that it's the raw data passed for re-evaluation in rowStyle.
+                originalAllVisitDates: p.allVisitDates 
             };
 
-            // 2) Compute the expiration date and handle reset logic if expired
-            let expiryDate = '----';
-            if (lastVisitDate && result.status !== 'Brak statusu') {
-                const rule = LOYALTY_RULES.find(r => r.name === result.status);
-                if (rule && rule.validityDays > 0) {
-                    const e = new Date(lastVisitDate);
-                    e.setDate(e.getDate() + rule.validityDays);
-
-                    if (e < new Date()) {
-                        // If expiry has passed based on the rule, override status to "Brak statusu"
-                        result.status = 'Brak statusu';
-                        result.discount = 0;
-                        result.nextThreshold = LOYALTY_RULES[0].min; // Set to the first threshold for "Brak statusu"
-                        result.visitsInPeriodCount = 0; // Reset visit count for display
-                        expiryDate = '----'; // No specific expiry if status is "Brak statusu"
-                    } else {
-                        expiryDate = e.toISOString().split('T')[0];
-                    }
-                }
-            }
-
-            row.expires = expiryDate;
+            row.expires = result.expiryDate;
             row.status = result.status;
             row.threshold = result.nextThreshold;
             row.discount = result.discount;
