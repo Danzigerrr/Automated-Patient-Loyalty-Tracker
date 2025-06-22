@@ -1,10 +1,8 @@
 # FizjoActive – Loyalty System
 
 [![License: GPL‑3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Bootstrap](https://img.shields.io/badge/Bootstrap-3.4.1-purple?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.7-purple?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Bootstrap Table v1.24.1](https://img.shields.io/badge/Bootstrap_Table-1.24.1-blue?logo=bootstrap&logoColor=white)](https://bootstrap-table.com/)
-[![jQuery v3.6.0](https://img.shields.io/badge/jQuery-3.6.0-blue?logo=jquery&logoColor=white)](https://jquery.com/)
-[![XLSX.js](https://img.shields.io/badge/XLSX.js-supported-lightgrey?logo=javascript&logoColor=F7DF1E)](https://github.com/SheetJS/sheetjs)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-online-green?logo=github&logoColor=white)](https://danzigerrr.github.io/Automated-Patient-Loyalty-Tracker/)
 
 
