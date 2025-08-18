@@ -1,11 +1,5 @@
-
-const MAX_VISIT_CONSIDERATION_DAYS = Math.max(...LOYALTY_RULES.map(r => r.validityDays));
-
 // Evaluates loyalty status based on the rules defined in config.js
-
-// --- evaluateLoyalty Method (UPDATED) ---
-// --- evaluateLoyalty (chronological daily iteration) ---
-function evaluateLoyalty({ allVisitDates }) {
+function evaluateLoyalty({ allVisitDates}) {
     const now = new Date();
     // Read highlight threshold from the DOM (default: 3)
     const thresholdInput = document.getElementById('highlightThreshold');
@@ -34,6 +28,28 @@ function evaluateLoyalty({ allVisitDates }) {
             expired: false,
             visitsInPeriodCount: 0,
             expiryDate: '----'
+        };
+    }
+
+    // If 30 or more visits, immediately return "30+ Wizyt" status
+    if (allVisitDates.length >= 30) {
+        // Find the "30+ Wizyt" rule from LOYALTY_RULES
+        const over30Rule = LOYALTY_RULES.find(r => r.name === '30+ Wizyt');
+
+        // Calculate the expiry date based on the validityDays for this rule
+        // It's 365 days from the current date.
+        const expiryDateObj = new Date(now);
+        expiryDateObj.setDate(expiryDateObj.getDate() + over30Rule.validityDays);
+        const expiryDateStr = expiryDateObj.toISOString().slice(0, 10); // Format to YYYY-MM-DD
+
+        return {
+            status: over30Rule.name, // Set status to "30+ Wizyt"
+            discount: over30Rule.discount, // Get the discount from the rule (10)
+            nextThreshold: '0', // No further threshold as this is the highest tier
+            highlightNext: false, // No highlighting needed for max tier
+            expired: false, // Not expired
+            visitsInPeriodCount: allVisitDates.length, // Total count of all visits
+            expiryDate: expiryDateStr // Calculated expiry date
         };
     }
 
